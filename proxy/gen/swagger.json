@@ -1,0 +1,221 @@
+{
+  "swagger": "2.0",
+  "info": {},
+  "securityDefinitions": {
+    "Bearer": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header",
+      "description": "Bearer token for authentication"
+    }
+  },
+  "paths": {
+    "/api/address/geocode": {
+      "post": {
+        "description": "Search by geocode",
+        "operationId": "apiGeocodeRequest",
+        "parameters": [
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/GeocodeRequest"
+            }
+          },
+          {
+            "type": "string",
+            "x-go-name": "Token",
+            "name": "Authorization",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/apiGeocodeResponse"
+          }
+        }
+      }
+    },
+    "/api/address/search": {
+      "post": {
+        "description": "Search by address",
+        "operationId": "apiRequestSearch",
+        "parameters": [
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SearchRequest"
+            }
+          },
+          {
+            "type": "string",
+            "x-go-name": "Token",
+            "name": "Authorization",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/apiResponseSearch"
+          }
+        }
+      }
+    },
+    "/api/login": {
+      "post": {
+        "description": "Login",
+        "operationId": "apiLoginRequest",
+        "parameters": [
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/User"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/apiLoginResponse"
+          }
+        }
+      }
+    },
+    "/api/register": {
+      "post": {
+        "description": "Register",
+        "operationId": "apiRegisterRequest",
+        "parameters": [
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/User"
+            }
+          },
+          {
+            "type": "string",
+            "x-go-name": "Token",
+            "name": "Authorization",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/apiRegisterResponse"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "GeocodeRequest": {
+      "type": "object",
+      "properties": {
+        "lat": {
+          "type": "string",
+          "x-go-name": "Lat"
+        },
+        "lng": {
+          "type": "string",
+          "x-go-name": "Lng"
+        }
+      },
+      "x-go-package": "hugoproxy-main/proxy/handler"
+    },
+    "ReworkedSearch": {
+      "type": "object",
+      "properties": {
+        "lat": {
+          "type": "string",
+          "x-go-name": "GeoLat"
+        },
+        "lon": {
+          "type": "string",
+          "x-go-name": "GeoLon"
+        },
+        "result": {
+          "type": "string",
+          "x-go-name": "Result"
+        }
+      },
+      "x-go-package": "hugoproxy-main/proxy/handler"
+    },
+    "ReworkedSearchResponse": {
+      "type": "object",
+      "properties": {
+        "addresses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ReworkedSearch"
+          },
+          "x-go-name": "Addresses"
+        }
+      },
+      "x-go-package": "hugoproxy-main/proxy/handler"
+    },
+    "SearchRequest": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "x-go-name": "Query"
+        }
+      },
+      "x-go-package": "hugoproxy-main/proxy/handler"
+    },
+    "User": {
+      "type": "object",
+      "properties": {
+        "password": {
+          "type": "string",
+          "x-go-name": "Password"
+        },
+        "username": {
+          "type": "string",
+          "x-go-name": "Username"
+        }
+      },
+      "x-go-package": "hugoproxy-main/proxy/handler"
+    }
+  },
+  "responses": {
+    "apiGeocodeResponse": {
+      "schema": {
+        "$ref": "#/definitions/ReworkedSearchResponse"
+      }
+    },
+    "apiLoginResponse": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "x-go-name": "Token"
+          }
+        }
+      }
+    },
+    "apiRegisterResponse": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "x-go-name": "Message"
+          }
+        }
+      }
+    },
+    "apiResponseSearch": {
+      "schema": {
+        "$ref": "#/definitions/ReworkedSearch"
+      }
+    }
+  }
+}

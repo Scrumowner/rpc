@@ -1,0 +1,46 @@
+version: '3.9'
+
+services:
+  hugo:
+    image: klakegg/hugo:0.101.0-ext-alpine
+    container_name: hugo
+    command: server
+    entrypoint: hugo
+    volumes:
+      - "./hugo:/src"
+    ports:
+      - "1313:1313"
+    networks:
+      - mylocal
+
+  db:
+    image: postgres:14.4-alpine
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: "user"
+      POSTGRES_PASSWORD: "password"
+      POSTGRES_DB: "my_database"
+    networks:
+      - mylocal
+
+  cache:
+    image: redis:latest
+    container_name: cache
+    ports:
+      - "6379:6379"
+    networks:
+      - mylocal
+
+  server:
+    build: ./proxy
+    container_name: my_app
+    ports:
+      - "8080:8080"
+    networks:
+      - mylocal
+
+networks:
+  mylocal:
+    driver: bridge
