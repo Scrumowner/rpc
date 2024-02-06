@@ -3,15 +3,13 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
-	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
-	"hugoproxy-main/proxy/provider"
 	"hugoproxy-main/proxy/responder"
 	service "hugoproxy-main/proxy/service"
 	"hugoproxy-main/proxy/storage"
 	"net/http"
+	"net/rpc"
 )
 
 type Searcher interface {
@@ -27,10 +25,10 @@ type Swaggerer interface {
 	GetSwaggerJson(w http.ResponseWriter, r *http.Request)
 }
 
-func NewSearcher(logger *zap.SugaredLogger, client http.Client, responder responder.Responder, redis *redis.Client, db *sqlx.DB) Searcher {
+func NewSearcher(responder responder.Responder, rpc *rpc.Client) Searcher {
 	return &Search{
-		responder:  responder,
-		geoservice: service.NewGeoService(provider.NewProvider(client), redis, db),
+		responder: responder,
+		rpc:       rpc,
 	}
 }
 func NewAuther(logger *zap.SugaredLogger, client http.Client, responder responder.Responder) Auther {
@@ -47,9 +45,9 @@ func NewSwaggerer(logger *zap.SugaredLogger, client http.Client, responder respo
 }
 
 type Search struct {
-	responder  responder.Responder
-	geoservice service.GeoServiceer
-	logger     zap.Logger
+	responder responder.Responder
+	logger    zap.Logger
+	rpc       *rpc.Client
 }
 type Auth struct {
 	responder   responder.Responder
@@ -69,11 +67,11 @@ func (controller *Search) GetSearch(w http.ResponseWriter, r *http.Request) {
 		controller.responder.ErrorBadRequest(w, fmt.Errorf("Invalid json"))
 		return
 	}
-	json, err := controller.geoservice.GetSearch(service.SearchRequestService{Query: toService.Query})
-	if err != nil {
-		controller.responder.ErrorInternal(w, err)
-	}
-	controller.responder.OutputJSON(w, json)
+	request := toService.Query
+	var response string
+	controller.rpc.Call("...", &request, &response)
+
+	controller.responder.OutputJSON(w, response)
 
 }
 func (controller *Search) GetGeoCode(w http.ResponseWriter, r *http.Request) {
@@ -83,11 +81,13 @@ func (controller *Search) GetGeoCode(w http.ResponseWriter, r *http.Request) {
 		controller.responder.ErrorBadRequest(w, fmt.Errorf("Invalid json"))
 		return
 	}
-	json, err := controller.geoservice.GetGeoCode(service.GeocodeRequestService{Lat: toService.Lat, Lng: toService.Lng})
+	var request []string = []string{toService.Lat, toService.Lng}
+	var response string
+	controller.rpc.Call("...", &request, &response)
 	if err != nil {
 		controller.responder.ErrorInternal(w, err)
 	}
-	controller.responder.OutputJSON(w, json)
+	controller.responder.OutputJSON(w, response)
 
 }
 func (controller *Auth) Register(w http.ResponseWriter, r *http.Request) {
