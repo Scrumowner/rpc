@@ -16,14 +16,11 @@ import (
 	"time"
 )
 
-// service using rpc
-
 func main() {
 	time.Sleep(10 * time.Second)
-	// Формирование строки подключения к PostgreSQL
+
 	dbConnection := fmt.Sprintf("user=user password=password host=db port=5432 dbname=my_database sslmode=disable")
 
-	// Подключение к базе данных PostgreSQL
 	db, err := sql.Open("postgres", dbConnection)
 	if err != nil {
 		log.Fatal("Can't connect to PostgreSQL:", err)
@@ -31,7 +28,6 @@ func main() {
 	defer db.Close()
 	log.Println("Connect to postgres")
 
-	// Создание объекта sqlx.DB для удобной работы с базой данных
 	dbx := sqlx.NewDb(db, "postgres")
 	if err = dbx.Ping(); err != nil {
 		log.Fatal("Can't use sqlx driver for PostgreSQL:", err)
