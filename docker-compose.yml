@@ -14,7 +14,7 @@ services:
       - mylocal
 
   db:
-    image: postgres:14.4-alpine
+    image: postgres:14.4
     restart: always
     ports:
       - "5432:5432"
@@ -22,6 +22,9 @@ services:
       POSTGRES_USER: "user"
       POSTGRES_PASSWORD: "password"
       POSTGRES_DB: "my_database"
+
+    volumes:
+      -  ./postgresql.conf:/etc/postgresql/postgresql.conf
     networks:
       - mylocal
 
@@ -33,6 +36,17 @@ services:
     networks:
       - mylocal
 
+  serv:
+    build: ./service
+    container_name: geo_service
+    ports:
+      - "1234:1234"
+    depends_on:
+      - db
+      - cache
+    networks:
+      - mylocal
+
   server:
     build: ./proxy
     container_name: my_app
@@ -40,6 +54,8 @@ services:
       - "8080:8080"
     networks:
       - mylocal
+    depends_on:
+      - serv
 
 networks:
   mylocal:

@@ -17,7 +17,7 @@ type GeoController struct {
 	service service.GeoServiceer
 }
 
-func NewGeoController(client http.Client, redis *redis.Client, db *sqlx.DB) GeoControllerer {
+func NewGeoController(client http.Client, redis *redis.Client, db *sqlx.DB) *GeoController {
 	return &GeoController{
 		service: service.NewGeoService(client, redis, db),
 	}

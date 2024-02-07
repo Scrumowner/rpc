@@ -14,3 +14,15 @@ type GeoIntoDb struct {
 	GeoLat string `json:"lat" db:"r_lat" db_type:"text"`
 	GeoLon string `json:"lon" db:"r_lon" db_type:"text"`
 }
+
+type Tabler interface {
+	TableName() string
+}
+
+func (s *SearchIntoDb) TableName() string {
+	return "address"
+}
+
+func (g *GeoIntoDb) TableName() string {
+	return "geo"
+}

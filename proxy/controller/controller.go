@@ -69,7 +69,12 @@ func (controller *Search) GetSearch(w http.ResponseWriter, r *http.Request) {
 	}
 	request := toService.Query
 	var response string
-	controller.rpc.Call("...", &request, &response)
+	err = controller.rpc.Call("GeoController.GetAddress", &request, &response)
+	if err != nil {
+		if err != nil {
+			controller.responder.ErrorInternal(w, err)
+		}
+	}
 
 	controller.responder.OutputJSON(w, response)
 
@@ -83,7 +88,7 @@ func (controller *Search) GetGeoCode(w http.ResponseWriter, r *http.Request) {
 	}
 	var request []string = []string{toService.Lat, toService.Lng}
 	var response string
-	controller.rpc.Call("...", &request, &response)
+	err = controller.rpc.Call("GeoController.GetGeo", &request, &response)
 	if err != nil {
 		controller.responder.ErrorInternal(w, err)
 	}

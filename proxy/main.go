@@ -19,23 +19,15 @@ import (
 	"time"
 )
 
-const (
-	host     = "db"
-	port     = 5432
-	user     = "user"
-	password = "password"
-	dbname   = "my_database"
-)
-
 func main() {
-	time.Sleep(time.Second * 5)
+	time.Sleep(time.Second * 15)
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
 	sugar := logger.Sugar()
 	r := chi.NewRouter()
 	r.Use(middleware.DefaultLogger)
 	client := http.Client{}
-	rpc, err := rpc.Dial("tcp", "localhost:1234")
+	rpc, err := rpc.Dial("tcp", "serv:1234")
 	if err != nil {
 		log.Fatal("Can't connect to rpc")
 	}

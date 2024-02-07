@@ -3,8 +3,8 @@ package migrator
 import (
 	"fmt"
 	"github.com/jmoiron/sqlx"
-	"reflect"
 	"rpc/service/internal/db"
+	"rpc/service/models"
 	"strings"
 )
 
@@ -20,12 +20,11 @@ func NewMigrator(sql *sqlx.DB) *Migrator {
 	}
 }
 
-func (m *Migrator) Migrate(tables ...interface{}) {
+func (m *Migrator) Migrate(tables ...models.Tabler) {
 	for _, table := range tables {
 		info := m.scanner.GetFieldsTypes(table)
 		var query strings.Builder
-		query.WriteString("CREATE TABLE IF NOT EXISTS ")
-		query.WriteString(reflect.TypeOf(table).Name())
+		query.WriteString(fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s ", table.TableName()))
 		query.WriteString(" (")
 		for j, column := range info.Names {
 			tp := fmt.Sprintf("%s ", column)
@@ -38,6 +37,7 @@ func (m *Migrator) Migrate(tables ...interface{}) {
 			}
 		}
 		query.WriteString(")")
-		fmt.Println(query.String())
+		m.sql.MustExec(query.String())
+
 	}
 }
