@@ -21,13 +21,14 @@ import (
 
 func main() {
 	time.Sleep(time.Second * 15)
+	configrpc := "json-rpc"
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
 	sugar := logger.Sugar()
 	r := chi.NewRouter()
 	r.Use(middleware.DefaultLogger)
 	client := http.Client{}
-	rpc, err := rpc.Dial("tcp", "serv:1234")
+	rpc, err := rpc.DialHTTP("tcp", "serv:1234")
 	if err != nil {
 		log.Fatal("Can't connect to rpc")
 	}
@@ -56,18 +57,32 @@ func main() {
 		r.Get("/pprof/threadcreate", pprof.Handler("threadcreate").ServeHTTP)
 		r.Get("/debug/pprof/goroutine", fullGoroutineStackDump)
 	})
+	if configrpc == "rpc" {
+		r.Route("/api", func(r chi.Router) {
+			//r.Use(jwtauth.Verifier(storage.TokenAuth))
+			//r.Use(jwtauth.Authenticator(storage.TokenAuth))
+			//r.Use(internalMiddleware.TokenAuthMiddleware)
 
-	r.Route("/api", func(r chi.Router) {
-		//r.Use(jwtauth.Verifier(storage.TokenAuth))
-		//r.Use(jwtauth.Authenticator(storage.TokenAuth))
-		//r.Use(internalMiddleware.TokenAuthMiddleware)
+			r.Route("/address", func(r chi.Router) {
 
-		r.Route("/address", func(r chi.Router) {
-
-			r.Post("/search", controller.SearchController.GetSearch)
-			r.Post("/geocode", controller.SearchController.GetGeoCode)
+				r.Post("/search", controller.SearchController.GetSearch)
+				r.Post("/geocode", controller.SearchController.GetGeoCode)
+			})
 		})
-	})
+	} else if configrpc == "json-rpc" {
+		r.Route("/api", func(r chi.Router) {
+			//r.Use(jwtauth.Verifier(storage.TokenAuth))
+			//r.Use(jwtauth.Authenticator(storage.TokenAuth))
+			//r.Use(internalMiddleware.TokenAuthMiddleware)
+
+			r.Route("/address", func(r chi.Router) {
+
+				r.Post("/search", controller.SearchControllerJsonRpc.GetSearch)
+				r.Post("/geocode", controller.SearchControllerJsonRpc.GetGeoCode)
+			})
+		})
+	}
+
 	server := http.Server{
 		Addr:         ":8080",
 		Handler:      r,

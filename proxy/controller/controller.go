@@ -25,6 +25,13 @@ type Swaggerer interface {
 	GetSwaggerJson(w http.ResponseWriter, r *http.Request)
 }
 
+func NewSearcherJsonRpc(responder responder.Responder, rpc *rpc.Client) Searcher {
+	return &SearcherJsonRpc{
+		responder: responder,
+		rpc:       rpc,
+	}
+}
+
 func NewSearcher(responder responder.Responder, rpc *rpc.Client) Searcher {
 	return &Search{
 		responder: responder,
@@ -44,11 +51,6 @@ func NewSwaggerer(logger *zap.SugaredLogger, client http.Client, responder respo
 	}
 }
 
-type Search struct {
-	responder responder.Responder
-	logger    zap.Logger
-	rpc       *rpc.Client
-}
 type Auth struct {
 	responder   responder.Responder
 	authservice service.AuthServiceer
@@ -59,7 +61,70 @@ type Swagger struct {
 	swaggerservice service.SwaggerServiceer
 	logger         zap.Logger
 }
+type SearcherJsonRpc struct {
+	responder responder.Responder
+	logger    zap.Logger
+	rpc       *rpc.Client
+}
+type Search struct {
+	responder responder.Responder
+	logger    zap.Logger
+	rpc       *rpc.Client
+}
+type AddresRequest struct {
+	Query string `json:"query"`
+}
+type AddressResopnse struct {
+	Addresses []Geo `json:"addresses" db:"addresses"`
+}
 
+func (controller *SearcherJsonRpc) GetSearch(w http.ResponseWriter, r *http.Request) {
+	var toService RequestGeoSearch
+	err := json.NewDecoder(r.Body).Decode(&toService)
+	if err != nil {
+		controller.responder.ErrorBadRequest(w, fmt.Errorf("Invalid json"))
+		return
+	}
+	request := &AddresRequest{Query: toService.Query}
+	var response AddressResopnse
+	err = controller.rpc.Call("GeoControllerJsonRpc.GetAddress", request, &response)
+	if err != nil {
+		controller.responder.ErrorBadRequest(w, fmt.Errorf("Invalid json"))
+	}
+	bytes, _ := json.Marshal(response)
+	controller.responder.OutputJSON(w, string(bytes))
+}
+
+type GeoRequest struct {
+	Lat string `json:"lat"`
+	Lng string `json:"lng"`
+}
+type GeoResponse struct {
+	Addresses []Geo `json:"addresses"`
+}
+
+type Geo struct {
+	Result string `json:"result"`
+	GeoLat string `json:"lat"`
+	GeoLon string `json:"lon" `
+}
+
+func (controller *SearcherJsonRpc) GetGeoCode(w http.ResponseWriter, r *http.Request) {
+	var toService GeoRequest
+	err := json.NewDecoder(r.Body).Decode(&toService)
+	if err != nil {
+		controller.responder.ErrorBadRequest(w, fmt.Errorf("Invalid json"))
+		return
+	}
+	request := &GeoRequest{Lat: toService.Lat, Lng: toService.Lng}
+	var result GeoResponse
+	err = controller.rpc.Call("GeoControllerJsonRpc.GetGeo", request, &result)
+	if err != nil {
+		controller.responder.ErrorBadRequest(w, fmt.Errorf("Invalid json"))
+	}
+	bytes, _ := json.Marshal(result)
+	controller.responder.OutputJSON(w, string(bytes))
+}
 func (controller *Search) GetSearch(w http.ResponseWriter, r *http.Request) {
 	var toService RequestGeoSearch
 	err := json.NewDecoder(r.Body).Decode(&toService)

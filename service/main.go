@@ -17,10 +17,9 @@ import (
 )
 
 func main() {
+	configRpc := "json-rpc"
 	time.Sleep(10 * time.Second)
-
 	dbConnection := fmt.Sprintf("user=user password=password host=db port=5432 dbname=my_database sslmode=disable")
-
 	db, err := sql.Open("postgres", dbConnection)
 	if err != nil {
 		log.Fatal("Can't connect to PostgreSQL:", err)
@@ -34,8 +33,10 @@ func main() {
 	}
 	address := models.SearchIntoDb{}
 	geo := models.GeoIntoDb{}
-	log.Println(err)
-	log.Println("Sqlx connect to postgres")
+	if err == nil {
+		log.Println("Sqlx connect to postgres")
+	}
+
 	migrator := migrator.NewMigrator(dbx)
 	migrator.Migrate(&address, &geo)
 	redis := redis.NewClient(&redis.Options{
@@ -46,19 +47,32 @@ func main() {
 		ReadTimeout:  time.Second * 20,
 	})
 	client := http.Client{}
-	controller := controller.NewGeoController(client, redis, dbx)
-	rpc.Register(controller)
-	listener, err := net.Listen("tcp", "0.0.0.0:1234")
-	if err != nil {
-		log.Fatal("Can't open connection")
-	}
+	if configRpc == "json-rpc" {
+		controller := controller.NewGeoControllerJsonRpc(client, redis, dbx)
+		rpc.Register(controller)
+		rpc.HandleHTTP()
 
-	for {
-		conn, acceptErr := listener.Accept()
-		if acceptErr != nil {
-			log.Println("Can't accept connection", acceptErr)
+		listener, err := net.Listen("tcp", "0.0.0.0:1234")
+		if err != nil {
+			log.Fatal("Can't open connection")
 		}
-		go rpc.ServeConn(conn)
-	}
 
+		http.Serve(listener, nil)
+	} else if configRpc == "rpc" {
+		controller := controller.NewGeoController(client, redis, dbx)
+		rpc.Register(controller)
+		listener, err := net.Listen("tcp", "0.0.0.0:1234")
+		if err != nil {
+			log.Fatal("Can't open connection")
+		}
+
+		for {
+			conn, acceptErr := listener.Accept()
+			if acceptErr != nil {
+				log.Println("Can't accept connection", acceptErr)
+			}
+			go rpc.ServeConn(conn)
+		}
+	}
+	log.Println("Server is shut down")
 }
