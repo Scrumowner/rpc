@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/jmoiron/sqlx"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
@@ -11,6 +12,7 @@ import (
 	"net"
 	"net/http"
 	"net/rpc"
+	"os"
 	controller "rpc/service/controller"
 	"rpc/service/internal/migrator"
 	"rpc/service/models"
@@ -19,8 +21,11 @@ import (
 )
 
 func main() {
-
-	configRpc := "json-rpc"
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Can't load config from env")
+	}
+	configRpc := os.Getenv("RPC_PROVIDER")
 	time.Sleep(10 * time.Second)
 	dbConnection := fmt.Sprintf("user=user password=password host=db port=5432 dbname=my_database sslmode=disable")
 	db, err := sql.Open("postgres", dbConnection)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
 	grpc "google.golang.org/grpc"
@@ -21,8 +22,12 @@ import (
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Can't load config from env")
+	}
 	time.Sleep(time.Second * 15)
-	configrpc := "grpc"
+	configrpc := os.Getenv("RPC_PROVIDER")
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
 	sugar := logger.Sugar()
