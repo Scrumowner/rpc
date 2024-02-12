@@ -1,10 +1,13 @@
 package controller
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	pb "hugoproxy-main/proxy/proto/gen"
 	"hugoproxy-main/proxy/responder"
 	service "hugoproxy-main/proxy/service"
 	"hugoproxy-main/proxy/storage"
@@ -51,6 +54,13 @@ func NewSwaggerer(logger *zap.SugaredLogger, client http.Client, responder respo
 	}
 }
 
+func NewSearchgRpc(responder responder.Responder, cc grpc.ClientConnInterface) *SearchgRpc {
+	return &SearchgRpc{
+		responder: responder,
+		rpc:       pb.NewGeoServiceClient(cc),
+	}
+}
+
 type Auth struct {
 	responder   responder.Responder
 	authservice service.AuthServiceer
@@ -71,6 +81,46 @@ type Search struct {
 	logger    zap.Logger
 	rpc       *rpc.Client
 }
+type SearchgRpc struct {
+	responder responder.Responder
+	rpc       pb.GeoServiceClient
+}
+
+func (controller *SearchgRpc) GetSearch(w http.ResponseWriter, r *http.Request) {
+	var toService RequestGeoSearch
+	err := json.NewDecoder(r.Body).Decode(&toService)
+	if err != nil {
+		controller.responder.ErrorBadRequest(w, fmt.Errorf("Invalid json"))
+	}
+	ctx := context.Background()
+	req := &pb.GeoRequest{Query: toService.Query}
+	resp, err := controller.rpc.GetGeoResponse(ctx, req)
+	if err != nil {
+		controller.responder.ErrorInternal(w, fmt.Errorf("Internal error"))
+	}
+	geoResp := &GeoResponse{Addresses: []Geo{{Result: resp.GetResult(), GeoLat: resp.GetLat(), GeoLon: resp.GetLon()}}}
+	json, err := json.Marshal(geoResp)
+	controller.responder.OutputJSON(w, string(json))
+
+}
+func (controller *SearchgRpc) GetGeo(w http.ResponseWriter, r *http.Request) {
+	var toGeo RequestGeoGeo
+	err := json.NewDecoder(r.Body).Decode(&toGeo)
+	if err != nil {
+		controller.responder.ErrorBadRequest(w, fmt.Errorf("Invalid json"))
+	}
+	ctx := context.Background()
+	req := &pb.SearchRequest{Lat: toGeo.Lat, Lon: toGeo.Lng}
+	resp, err := controller.rpc.GetSearchResponse(ctx, req)
+	if err != nil {
+		controller.responder.ErrorInternal(w, fmt.Errorf("Internal error"))
+	}
+	geoResp := &GeoResponse{Addresses: []Geo{{Result: resp.GetResult(), GeoLat: resp.GetLat(), GeoLon: resp.GetLon()}}}
+	json, err := json.Marshal(geoResp)
+	controller.responder.OutputJSON(w, string(json))
+
+}
+
 type AddresRequest struct {
 	Query string `json:"query"`
 }

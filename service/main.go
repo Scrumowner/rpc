@@ -6,6 +6,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
+	"google.golang.org/grpc"
 	"log"
 	"net"
 	"net/http"
@@ -13,10 +14,12 @@ import (
 	controller "rpc/service/controller"
 	"rpc/service/internal/migrator"
 	"rpc/service/models"
+	pb "rpc/service/proto/gen"
 	"time"
 )
 
 func main() {
+
 	configRpc := "json-rpc"
 	time.Sleep(10 * time.Second)
 	dbConnection := fmt.Sprintf("user=user password=password host=db port=5432 dbname=my_database sslmode=disable")
@@ -73,6 +76,21 @@ func main() {
 			}
 			go rpc.ServeConn(conn)
 		}
+	} else if configRpc == "grpc" {
+		controller := controller.NewGeoContollergRpc(client, redis, dbx)
+		listner, err := net.Listen("tcp", "0.0.0.0:1234")
+		if err != nil {
+			log.Fatal("Can't open connection")
+		}
+		server := grpc.NewServer()
+		pb.RegisterGeoServiceServer(server, controller)
+		log.Println("grpc server starting")
+		if err := server.Serve(listner); err != nil {
+			log.Fatalf("Ошибка при запуске сервера: %v", err)
+		}
 	}
+
 	log.Println("Server is shut down")
 }
+
+//protoc -I . geo.proto --go_out=./gen/ --go_opt=paths=source_relative --go-grpc_out=./gen/ --go-grpc_opt=paths=source_relative

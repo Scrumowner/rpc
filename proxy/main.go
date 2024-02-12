@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
+	grpc "google.golang.org/grpc"
 	"hugoproxy-main/proxy/controllers"
 	internalMiddleware "hugoproxy-main/proxy/middleware"
 	"log"
@@ -21,7 +22,7 @@ import (
 
 func main() {
 	time.Sleep(time.Second * 15)
-	configrpc := "json-rpc"
+	configrpc := "grpc"
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
 	sugar := logger.Sugar()
@@ -30,9 +31,14 @@ func main() {
 	client := http.Client{}
 	rpc, err := rpc.DialHTTP("tcp", "serv:1234")
 	if err != nil {
-		log.Fatal("Can't connect to rpc")
+		log.Println("Can't connect to rpc")
 	}
-	controller := controllers.NewControllers(sugar, client, rpc)
+	grpc, err := grpc.Dial("serv:1234", grpc.WithInsecure())
+	if err != nil {
+		log.Fatal("Can't connect to grpc")
+	}
+	defer grpc.Close()
+	controller := controllers.NewControllers(sugar, client, rpc, grpc)
 	rp := internalMiddleware.NewReverseProxy("http://hugo", ":1313")
 	r.Use(rp.ReverseProxy)
 	r.Post("/api/register", controller.AuthController.Register)
@@ -62,7 +68,6 @@ func main() {
 			//r.Use(jwtauth.Verifier(storage.TokenAuth))
 			//r.Use(jwtauth.Authenticator(storage.TokenAuth))
 			//r.Use(internalMiddleware.TokenAuthMiddleware)
-
 			r.Route("/address", func(r chi.Router) {
 
 				r.Post("/search", controller.SearchController.GetSearch)
@@ -74,11 +79,21 @@ func main() {
 			//r.Use(jwtauth.Verifier(storage.TokenAuth))
 			//r.Use(jwtauth.Authenticator(storage.TokenAuth))
 			//r.Use(internalMiddleware.TokenAuthMiddleware)
-
 			r.Route("/address", func(r chi.Router) {
 
 				r.Post("/search", controller.SearchControllerJsonRpc.GetSearch)
 				r.Post("/geocode", controller.SearchControllerJsonRpc.GetGeoCode)
+			})
+		})
+	} else if configrpc == "grpc" {
+		r.Route("/api", func(r chi.Router) {
+			//r.Use(jwtauth.Verifier(storage.TokenAuth))
+			//r.Use(jwtauth.Authenticator(storage.TokenAuth))
+			//r.Use(internalMiddleware.TokenAuthMiddleware)
+			r.Route("/address", func(r chi.Router) {
+
+				r.Post("/search", controller.SearchControllergRpc.GetSearch)
+				r.Post("/geocode", controller.SearchControllergRpc.GetGeo)
 			})
 		})
 	}
