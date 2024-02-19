@@ -1,8 +1,8 @@
 package gen
 
 import (
+	"hugoproxy-main/proxy/controller"
 	"hugoproxy-main/proxy/models/models"
-	"hugoproxy-main/proxy/storage"
 )
 
 // Package classification infoblog.
@@ -95,7 +95,7 @@ type apiGeocodeResponse struct {
 type apiRegisterRequest struct {
 	// in:body
 	// required: true
-	Body storage.User
+	Body controller.RequestAuth
 
 	// in: header
 	// name: Authorization
@@ -122,7 +122,7 @@ type apiRegisterResponse struct {
 type apiLoginRequest struct {
 	// in:body
 	// required: true
-	Body storage.User
+	Body controller.RequestAuth
 }
 
 // swagger:response apiLoginResponse
