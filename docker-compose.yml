@@ -36,26 +36,44 @@ services:
     networks:
       - mylocal
 
-  serv:
-    build: ./service
-    container_name: geo_service
+  proxy:
+    build: ./proxy
+    container_name: proxy
+    ports:
+      - "8080:8080"
+    restart: on-failure
+    networks:
+      - mylocal
+    depends_on:
+      - geo
+
+  geo:
+    build: ./geo
+    container_name: geo
     ports:
       - "1234:1234"
     depends_on:
       - db
       - cache
+    restart: on-failure
     networks:
       - mylocal
-
-  server:
-    build: ./proxy
-    container_name: my_app
+  user_service:
+    build: ./user_service
+    container_name: user_service
     ports:
-      - "8080:8080"
+      - "1237:1237"
+    restart: on-failure
     networks:
       - mylocal
-    depends_on:
-      - serv
+  auth:
+    build: ./auth
+    container_name: auth
+    ports:
+      - "1235:1235"
+    restart: on-failure
+    networks:
+      - mylocal
 
 networks:
   mylocal:

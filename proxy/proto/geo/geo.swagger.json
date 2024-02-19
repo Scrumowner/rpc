@@ -1,0 +1,147 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "geo.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "GeoService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/api/address/geocode": {
+      "post": {
+        "operationId": "GeoService_GetGeo",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/geo_protoGeoResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/geo_protoGeoRequest"
+            }
+          }
+        ],
+        "tags": [
+          "GeoService"
+        ]
+      }
+    },
+    "/api/address/search": {
+      "post": {
+        "operationId": "GeoService_GetAddress",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/geo_protoGeoResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/geo_protoAddressRequest"
+            }
+          }
+        ],
+        "tags": [
+          "GeoService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "geo_protoAddressRequest": {
+      "type": "object",
+      "properties": {
+        "Query": {
+          "type": "string"
+        }
+      }
+    },
+    "geo_protoGeoRequest": {
+      "type": "object",
+      "properties": {
+        "Lat": {
+          "type": "string"
+        },
+        "Lon": {
+          "type": "string"
+        }
+      }
+    },
+    "geo_protoGeoResponse": {
+      "type": "object",
+      "properties": {
+        "Result": {
+          "type": "string"
+        },
+        "Lat": {
+          "type": "string"
+        },
+        "Lon": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}

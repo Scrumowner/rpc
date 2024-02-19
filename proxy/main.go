@@ -5,103 +5,66 @@ import (
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
-	grpc "google.golang.org/grpc"
+	"google.golang.org/grpc"
 	"hugoproxy-main/proxy/controllers"
 	internalMiddleware "hugoproxy-main/proxy/middleware"
 	"log"
 	"net/http"
-	"net/http/pprof"
-	rpc "net/rpc"
 	"os"
 	"os/signal"
-	"runtime"
 	"time"
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Can't load config from env")
-	}
 	time.Sleep(time.Second * 15)
-	configrpc := os.Getenv("RPC_PROVIDER")
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
 	sugar := logger.Sugar()
 	r := chi.NewRouter()
 	r.Use(middleware.DefaultLogger)
 	client := http.Client{}
-	rpc, err := rpc.DialHTTP("tcp", "serv:1234")
+	geoConn, err := grpc.Dial("geo:1234", grpc.WithInsecure())
 	if err != nil {
-		log.Println("Can't connect to rpc")
+		log.Printf("Can't dial to grpc %s", err)
 	}
-	grpc, err := grpc.Dial("serv:1234", grpc.WithInsecure())
+	authConn, err := grpc.Dial("auth:1235", grpc.WithInsecure())
 	if err != nil {
-		log.Fatal("Can't connect to grpc")
+		log.Printf("Can't dial to grpc %s", err)
 	}
-	defer grpc.Close()
-	controller := controllers.NewControllers(sugar, client, rpc, grpc)
-	rp := internalMiddleware.NewReverseProxy("http://hugo", ":1313")
+	userConn, err := grpc.Dial("user_service:1237", grpc.WithInsecure())
+	if err != nil {
+		log.Printf("Can't dial to grpc %s", err)
+	}
+	sugar.Infof("Sucseful connnect to geo:1234")
+	sugar.Infof("Sucseful connnect to auth:1235")
+	sugar.Infof("Sucseful connnect to user_service:1237")
+	defer geoConn.Close()
+	defer authConn.Close()
+	defer userConn.Close()
+	controller := controllers.NewControllers(sugar, client, geoConn, authConn, userConn)
+	rp := internalMiddleware.NewReverseProxy(controller, "http://hugo", ":1313")
 	r.Use(rp.ReverseProxy)
-	r.Post("/api/register", controller.AuthController.Register)
-	r.Post("/api/login", controller.AuthController.Login)
+	r.Route("/api", func(r chi.Router) {
+		r.Route("/auth", func(r chi.Router) {
+			r.Post("/register", controller.AuthController.Register)
+			r.Post("/login", controller.AuthController.Login)
+		})
+		r.Route("/user_service", func(r chi.Router) {
+			r.Post("/profile", controller.UserController.Profile)
+			r.Post("/list", controller.UserController.List)
+		})
+		r.Route("/address", func(r chi.Router) {
+			r.Post("/search", controller.SearchController.GetSearch)
+			r.Post("/geocode", controller.SearchController.GetGeo)
+		})
+
+	})
 	r.Route("/swagger", func(r chi.Router) {
 		r.Get("/index", controller.SwagController.GetSwaggerHtml)
 		r.Get("/swagger", controller.SwagController.GetSwaggerJson)
 	})
-	r.Route("/mycustompath", func(r chi.Router) {
-		//r.Use(jwtauth.Verifier(storage.TokenAuth))
-		//r.Use(jwtauth.Authenticator(storage.TokenAuth))
-		//r.Use(internalMiddleware.TokenAuthMiddleware)
-		r.Get("/pprof/profile", pprof.Profile)
-		r.Get("/pprof/trace", pprof.Trace)
-		r.Get("/pprof/", pprof.Index)
-		r.Get("/pprof/allocs", pprof.Handler("allocs").ServeHTTP)
-		r.Get("/pprof/block", pprof.Handler("block").ServeHTTP)
-		r.Get("/pprof/cmdline", pprof.Cmdline)
-		r.Get("/pprof/goroutine", pprof.Handler("goroutine").ServeHTTP)
-		r.Get("/pprof/heap", pprof.Handler("heap").ServeHTTP)
-		r.Get("/pprof/mutex", pprof.Handler("mutex").ServeHTTP)
-		r.Get("/pprof/threadcreate", pprof.Handler("threadcreate").ServeHTTP)
-		r.Get("/debug/pprof/goroutine", fullGoroutineStackDump)
-	})
-	if configrpc == "rpc" {
-		r.Route("/api", func(r chi.Router) {
-			//r.Use(jwtauth.Verifier(storage.TokenAuth))
-			//r.Use(jwtauth.Authenticator(storage.TokenAuth))
-			//r.Use(internalMiddleware.TokenAuthMiddleware)
-			r.Route("/address", func(r chi.Router) {
-
-				r.Post("/search", controller.SearchController.GetSearch)
-				r.Post("/geocode", controller.SearchController.GetGeoCode)
-			})
-		})
-	} else if configrpc == "json-rpc" {
-		r.Route("/api", func(r chi.Router) {
-			//r.Use(jwtauth.Verifier(storage.TokenAuth))
-			//r.Use(jwtauth.Authenticator(storage.TokenAuth))
-			//r.Use(internalMiddleware.TokenAuthMiddleware)
-			r.Route("/address", func(r chi.Router) {
-
-				r.Post("/search", controller.SearchControllerJsonRpc.GetSearch)
-				r.Post("/geocode", controller.SearchControllerJsonRpc.GetGeoCode)
-			})
-		})
-	} else if configrpc == "grpc" {
-		r.Route("/api", func(r chi.Router) {
-			//r.Use(jwtauth.Verifier(storage.TokenAuth))
-			//r.Use(jwtauth.Authenticator(storage.TokenAuth))
-			//r.Use(internalMiddleware.TokenAuthMiddleware)
-			r.Route("/address", func(r chi.Router) {
-
-				r.Post("/search", controller.SearchControllergRpc.GetSearch)
-				r.Post("/geocode", controller.SearchControllergRpc.GetGeo)
-			})
-		})
-	}
 
 	server := http.Server{
 		Addr:         ":8080",
@@ -125,17 +88,65 @@ func main() {
 	if err := server.Shutdown(ctx); err != nil {
 		log.Fatal("Server Shutdown:", err)
 	}
-	log.Println("Server exiting")
-}
-func fullGoroutineStackDump(w http.ResponseWriter, r *http.Request) {
-	// Получаем полный стек горутин
-	buf := make([]byte, 1<<20)
-	stackLen := runtime.Stack(buf, true)
 
-	// Отправляем содержимое стека в ответ на запрос
-	w.Header().Set("Content-Type", "text/plain")
-	w.WriteHeader(http.StatusOK)
-	w.Write(buf[:stackLen])
 }
 
+//log.Println("Server exiting")
+//router := chi.NewRouter()
+//router.Use()
+//func Auth(next http.Handler) http.Handler {
+//	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+//
+//	})
+//}
+
+//func fullGoroutineStackDump(w http.ResponseWriter, r *http.Request) {
+//	// Получаем полный стек горутин
+//	buf := make([]byte, 1<<20)
+//	stackLen := runtime.Stack(buf, true)
+//
+//	// Отправляем содержимое стека в ответ на запрос
+//	w.Header().Set("Content-Type", "text/plain")
+//	w.WriteHeader(http.StatusOK)
+//	w.Write(buf[:stackLen])
+//}
+
+//r.Route("/mycustompath", func(r chi.Router) {
+//	//r.Use(jwtauth.Verifier(storage.TokenAuth))
+//	//r.Use(jwtauth.Authenticator(storage.TokenAuth))
+//	//r.Use(internalMiddleware.TokenAuthMiddleware)
+//	r.Get("/pprof/profile", pprof.Profile)
+//	r.Get("/pprof/trace", pprof.Trace)
+//	r.Get("/pprof/", pprof.Index)
+//	r.Get("/pprof/allocs", pprof.Handler("allocs").ServeHTTP)
+//	r.Get("/pprof/block", pprof.Handler("block").ServeHTTP)
+//	r.Get("/pprof/cmdline", pprof.Cmdline)
+//	r.Get("/pprof/goroutine", pprof.Handler("goroutine").ServeHTTP)
+//	r.Get("/pprof/heap", pprof.Handler("heap").ServeHTTP)
+//	r.Get("/pprof/mutex", pprof.Handler("mutex").ServeHTTP)
+//	r.Get("/pprof/threadcreate", pprof.Handler("threadcreate").ServeHTTP)
+//	r.Get("/debug/pprof/goroutine", fullGoroutineStackDump)
+//})
 //{"id":123,"name":"123","phone":"123","email":"123","password":"123"}
+//if configrpc == "rpc" {
+//	r.Route("/api", func(r chi.Router) {
+//		//r.Use(jwtauth.Verifier(storage.TokenAuth))
+//		//r.Use(jwtauth.Authenticator(storage.TokenAuth))
+//		//r.Use(internalMiddleware.TokenAuthMiddleware)
+//		r.Route("/address", func(r chi.Router) {
+//
+//			r.Post("/search", controller.SearchController.GetSearch)
+//			r.Post("/geocode", controller.SearchController.GetGeoCode)
+//		})
+//	})
+//} else if configrpc == "json-rpc" {
+//	r.Route("/api", func(r chi.Router) {
+//		//r.Use(jwtauth.Verifier(storage.TokenAuth))
+//		//r.Use(jwtauth.Authenticator(storage.TokenAuth))
+//		//r.Use(internalMiddleware.TokenAuthMiddleware)
+//		r.Route("/address", func(r chi.Router) {
+//
+//			r.Post("/search", controller.SearchControllerJsonRpc.GetSearch)
+//			r.Post("/geocode", controller.SearchControllerJsonRpc.GetGeoCode)
+//		})
+//	})

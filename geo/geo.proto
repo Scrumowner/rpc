@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package geo_proto;
+
+option go_package="geo.geo.v1;genv1";
+import "google/api/annotations.proto";
+
+service GeoService {
+  rpc GetAddress (AddressRequest) returns (GeoResponse){
+    option (google.api.http) = {
+      post : "/api/address/search"
+      body : "*"
+    };
+  }
+  rpc GetGeo (GeoRequest) returns (GeoResponse) {
+    option (google.api.http) = {
+      post : "/api/address/geocode"
+      body : "*"
+    };
+  }
+}
+message GeoRequest  {
+  string Lat = 1;
+  string Lon = 2;
+}
+message GeoResponse {
+  string Result = 1;
+  string Lat = 2;
+  string Lon = 3;
+}
+
+
+message AddressRequest {
+  string Query = 1;
+}

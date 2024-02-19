@@ -1,7 +1,7 @@
 package gen
 
 import (
-	"hugoproxy-main/proxy/provider"
+	"hugoproxy-main/proxy/models/models"
 	"hugoproxy-main/proxy/storage"
 )
 
@@ -45,7 +45,7 @@ import (
 type apiRequestSearch struct {
 	// in:body
 	// required: true
-	Body provider.SearchRequest
+	Body models.SearchRequest
 
 	// in: header
 	// name: Authorization
@@ -57,7 +57,7 @@ type apiRequestSearch struct {
 type apiResponseSearch struct {
 	// in:body
 	// required: true
-	Body provider.ReworkedSearch
+	Body models.GeoResponse
 }
 
 // swagger:route POST /api/address/geocode apiGeocodeRequest
@@ -70,7 +70,7 @@ type apiResponseSearch struct {
 type apiGeocodeRequest struct {
 	// in:body
 	// required: true
-	Body provider.GeocodeRequest
+	Body models.GeocodeRequest
 
 	// in: header
 	// name: Authorization
@@ -82,7 +82,7 @@ type apiGeocodeRequest struct {
 type apiGeocodeResponse struct {
 	// in:body
 	// required: true
-	Body provider.ReworkedSearchResponse
+	Body models.GeoResponse
 }
 
 // swagger:route POST /api/register apiRegisterRequest

@@ -13,12 +13,10 @@ RUN go mod tidy
 RUN go build -o main
 # Собираем приложение
 
-# Начинаем новую стадию сборки на основе минимального образа
 FROM alpine:latest
 
-# Добавляем исполняемый файл из первой стадии в корневую директорию контейнера
-COPY --from=builder  /usr/local/go/src/hugoproxy-main/proxy/main /main
-
+# Копирование исполняемого файла из первой стадии
+COPY --from=builder /usr/local/go/src/hugoproxy-main/proxy/main /main
 # Открываем порт 8080
 EXPOSE 8080
 
