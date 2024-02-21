@@ -5,6 +5,7 @@ go 1.21.5
 require (
 	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.19.1
+	github.com/joho/godotenv v1.5.1
 	google.golang.org/genproto/googleapis/api v0.0.0-20240213162025-012b6fc9bca9
 	google.golang.org/grpc v1.61.1
 	google.golang.org/protobuf v1.32.0

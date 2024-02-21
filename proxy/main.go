@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -17,7 +18,43 @@ import (
 	"time"
 )
 
+type ServConfig struct {
+	port string
+}
+type ConnConfig struct {
+	GeoAddr
+	AuthAddr
+	UserAddr
+}
+type GeoAddr struct {
+	host string
+	port string
+}
+type AuthAddr struct {
+	host string
+	port string
+}
+type UserAddr struct {
+	host string
+	port string
+}
+
 func main() {
+	godotenv.Load()
+	conn := &ConnConfig{
+		GeoAddr: GeoAddr{
+			host: os.Getenv("GEO_HOST"),
+			port: os.Getenv("GEO_PORT"),
+		},
+		AuthAddr: AuthAddr{
+			host: os.Getenv("AUTH_HOST"),
+			port: os.Getenv("AUTH_PORT"),
+		},
+		UserAddr: UserAddr{
+			host: os.Getenv("USER_HOST"),
+			port: os.Getenv("USER_PORT"),
+		},
+	}
 	time.Sleep(time.Second * 15)
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
@@ -25,21 +62,21 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.DefaultLogger)
 	client := http.Client{}
-	geoConn, err := grpc.Dial("geo:1234", grpc.WithInsecure())
+	geoConn, err := grpc.Dial(fmt.Sprintf("%s:%s", conn.GeoAddr.host, conn.GeoAddr.port), grpc.WithInsecure())
 	if err != nil {
 		log.Printf("Can't dial to grpc %s", err)
 	}
-	authConn, err := grpc.Dial("auth:1235", grpc.WithInsecure())
+	authConn, err := grpc.Dial(fmt.Sprintf("%s:%s", conn.AuthAddr.host, conn.AuthAddr.port), grpc.WithInsecure())
 	if err != nil {
 		log.Printf("Can't dial to grpc %s", err)
 	}
-	userConn, err := grpc.Dial("user_service:1237", grpc.WithInsecure())
+	userConn, err := grpc.Dial(fmt.Sprintf("%s:%s", conn.UserAddr.host, conn.UserAddr.port), grpc.WithInsecure())
 	if err != nil {
 		log.Printf("Can't dial to grpc %s", err)
 	}
-	sugar.Infof("Sucseful connnect to geo:1234")
-	sugar.Infof("Sucseful connnect to auth:1235")
-	sugar.Infof("Sucseful connnect to user_service:1237")
+	sugar.Infof("Sucseful connnect to %s:%s", conn.GeoAddr.host, conn.GeoAddr.port)
+	sugar.Infof("Sucseful connnect to %s:%s", conn.AuthAddr.host, conn.AuthAddr.port)
+	sugar.Infof("Sucseful connnect to  %s:%s", conn.UserAddr.host, conn.UserAddr.port)
 	defer geoConn.Close()
 	defer authConn.Close()
 	defer userConn.Close()
@@ -65,9 +102,10 @@ func main() {
 		r.Get("/index", controller.SwagController.GetSwaggerHtml)
 		r.Get("/swagger", controller.SwagController.GetSwaggerJson)
 	})
-
+	servconfig := &ServConfig{port: os.Getenv("PORXY_PORT")}
+	port := fmt.Sprintf(":%s", servconfig)
 	server := http.Server{
-		Addr:         ":8080",
+		Addr:         port,
 		Handler:      r,
 		ReadTimeout:  time.Second * 10,
 		WriteTimeout: time.Second * 10,

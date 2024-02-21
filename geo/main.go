@@ -4,12 +4,14 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/jmoiron/sqlx"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
 	"log"
 	"net"
 	"net/http"
+	"os"
 	controller "rpc/service/controller"
 	"rpc/service/internal/migrator"
 	"rpc/service/models"
@@ -17,9 +19,46 @@ import (
 	"time"
 )
 
+type DbConfig struct {
+	user     string
+	password string
+	host     string
+	port     string
+	dbname   string
+}
+type CacheConfig struct {
+	host string
+	port string
+}
+type ServConfig struct {
+	port string
+}
+
 func main() {
+	godotenv.Load()
+	dbconfig := &DbConfig{
+		user:     os.Getenv("POSTGRES_USER"),
+		password: os.Getenv("POSTGRES_PASSWORD"),
+		host:     os.Getenv("POSTGRES_HOST"),
+		port:     os.Getenv("POSTGRES_PORT"),
+		dbname:   os.Getenv("POSTGRES_DB"),
+	}
+	cacheconfig := &CacheConfig{
+		host: os.Getenv("REDIS_HOST"),
+		port: os.Getenv("REDIS_PORT"),
+	}
+	servconfig := &ServConfig{
+		port: os.Getenv("USER_PORT"),
+	}
 	time.Sleep(10 * time.Second)
-	dbAddr := fmt.Sprintf("user=user password=password host=db port=5432 dbname=my_database sslmode=disable")
+
+	dbAddr := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s sslmode=disable",
+		dbconfig.user,
+		dbconfig.password,
+		dbconfig.host,
+		dbconfig.port,
+		dbconfig.dbname,
+	)
 	db, err := sql.Open("postgres", dbAddr)
 	if err != nil {
 		log.Fatal("Can't connect to PostgreSQL:", err)
@@ -40,10 +79,10 @@ func main() {
 
 	migrator := migrator.NewMigrator(dbx)
 	migrator.Migrate(&address, &geo)
-
+	cache := fmt.Sprintf("%s:%s", cacheconfig.host, cacheconfig.port)
 	redis := redis.NewClient(&redis.Options{
 		Network:      "tcp",
-		Addr:         "cache:6379",
+		Addr:         cache,
 		DB:           0,
 		WriteTimeout: time.Second * 20,
 		ReadTimeout:  time.Second * 20,
@@ -51,7 +90,8 @@ func main() {
 	client := http.Client{}
 
 	controller := controller.NewGeoContollergRpc(client, redis, dbx)
-	listner, err := net.Listen("tcp", "0.0.0.0:1234")
+	port := fmt.Sprintf("0.0.0.0:%s", servconfig.port)
+	listner, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatal("Can't open connection")
 	}

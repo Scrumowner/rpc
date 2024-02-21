@@ -4,10 +4,12 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/jmoiron/sqlx"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
 	"log"
 	"net"
+	"os"
 	"time"
 	"user/controller"
 	"user/models"
@@ -15,9 +17,37 @@ import (
 	"user/storage"
 )
 
+type DbConfig struct {
+	user     string
+	password string
+	host     string
+	port     string
+	dbname   string
+}
+type ServConfig struct {
+	port string
+}
+
 func main() {
+	godotenv.Load()
+	dbconfig := DbConfig{
+		user:     os.Getenv("POSTGRES_USER"),
+		password: os.Getenv("POSTGRES_PASSWORD"),
+		host:     os.Getenv("POSTGRES_HOST"),
+		port:     os.Getenv("POSTGRES_PORT"),
+		dbname:   os.Getenv("POSTGRES_DB"),
+	}
+	servconfig := ServConfig{
+		port: os.Getenv("USER_PORT"),
+	}
 	time.Sleep(time.Second * 15)
-	dbAddr := fmt.Sprintf("user=user password=password host=db port=5432 dbname=my_database sslmode=disable")
+	dbAddr := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s sslmode=disable",
+		dbconfig.user,
+		dbconfig.password,
+		dbconfig.host,
+		dbconfig.port,
+		dbconfig.dbname,
+	)
 	db, err := sql.Open("postgres", dbAddr)
 	if err != nil {
 		log.Fatal("Can't connect to PostgreSQL:", err)
@@ -37,7 +67,8 @@ func main() {
 	migrator.Migrate(user)
 
 	controller := controller.NewUserController(dbx)
-	conn, err := net.Listen("tcp", ":1237")
+	port := fmt.Sprintf("0.0.0.0:%s", servconfig.port)
+	conn, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatalf("Ошибка при прослушивании порта: %v", err)
 	}
