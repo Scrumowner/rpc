@@ -22,9 +22,15 @@ type ServConfig struct {
 	port string
 }
 type ConnConfig struct {
+	ServConfig
+	HugoAddr
 	GeoAddr
 	AuthAddr
 	UserAddr
+}
+type HugoAddr struct {
+	host string
+	port string
 }
 type GeoAddr struct {
 	host string
@@ -42,6 +48,13 @@ type UserAddr struct {
 func main() {
 	godotenv.Load()
 	conn := &ConnConfig{
+		ServConfig: ServConfig{
+			port: os.Getenv("PORXY_PORT"),
+		},
+		HugoAddr: HugoAddr{
+			host: os.Getenv("HUGO_HOST"),
+			port: os.Getenv("HUGO_PORT"),
+		},
 		GeoAddr: GeoAddr{
 			host: os.Getenv("GEO_HOST"),
 			port: os.Getenv("GEO_PORT"),
@@ -81,7 +94,7 @@ func main() {
 	defer authConn.Close()
 	defer userConn.Close()
 	controller := controllers.NewControllers(sugar, client, geoConn, authConn, userConn)
-	rp := internalMiddleware.NewReverseProxy(controller, "http://hugo", ":1313")
+	rp := internalMiddleware.NewReverseProxy(controller, conn.HugoAddr.host, fmt.Sprintf(":%s", conn.HugoAddr.port))
 	r.Use(rp.ReverseProxy)
 	r.Route("/api", func(r chi.Router) {
 		r.Route("/auth", func(r chi.Router) {
@@ -102,8 +115,7 @@ func main() {
 		r.Get("/index", controller.SwagController.GetSwaggerHtml)
 		r.Get("/swagger", controller.SwagController.GetSwaggerJson)
 	})
-	servconfig := &ServConfig{port: os.Getenv("PORXY_PORT")}
-	port := fmt.Sprintf(":%s", servconfig)
+	port := fmt.Sprintf(":%s", conn.ServConfig.port)
 	server := http.Server{
 		Addr:         port,
 		Handler:      r,
