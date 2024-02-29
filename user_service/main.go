@@ -25,7 +25,8 @@ type DbConfig struct {
 	dbname   string
 }
 type ServConfig struct {
-	port string
+	listen string
+	port   string
 }
 
 func main() {
@@ -38,7 +39,8 @@ func main() {
 		dbname:   os.Getenv("POSTGRES_DB"),
 	}
 	servconfig := ServConfig{
-		port: os.Getenv("USER_PORT"),
+		listen: os.Getenv("USER_LISTEN"),
+		port:   os.Getenv("USER_PORT"),
 	}
 	time.Sleep(time.Second * 15)
 	dbAddr := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s sslmode=disable",
@@ -67,7 +69,7 @@ func main() {
 	migrator.Migrate(user)
 
 	controller := controller.NewUserController(dbx)
-	port := fmt.Sprintf("0.0.0.0:%s", servconfig.port)
+	port := fmt.Sprintf("%s:%s", servconfig.listen, servconfig.port)
 	conn, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatalf("Ошибка при прослушивании порта: %v", err)

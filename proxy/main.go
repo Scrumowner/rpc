@@ -19,7 +19,8 @@ import (
 )
 
 type ServConfig struct {
-	port string
+	listen string
+	port   string
 }
 type ConnConfig struct {
 	ServConfig
@@ -46,10 +47,11 @@ type UserAddr struct {
 }
 
 func main() {
-	godotenv.Load()
+	godotenv.Load(".env", "proxy.env")
 	conn := &ConnConfig{
 		ServConfig: ServConfig{
-			port: os.Getenv("PORXY_PORT"),
+			listen: os.Getenv("USER_LISTEN"),
+			port:   os.Getenv("PORXY_PORT"),
 		},
 		HugoAddr: HugoAddr{
 			host: os.Getenv("HUGO_HOST"),

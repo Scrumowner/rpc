@@ -31,11 +31,12 @@ type CacheConfig struct {
 	port string
 }
 type ServConfig struct {
-	port string
+	listen string
+	port   string
 }
 
 func main() {
-	godotenv.Load()
+	godotenv.Load(".env", "service.env")
 	dbconfig := &DbConfig{
 		user:     os.Getenv("POSTGRES_USER"),
 		password: os.Getenv("POSTGRES_PASSWORD"),
@@ -48,7 +49,8 @@ func main() {
 		port: os.Getenv("REDIS_PORT"),
 	}
 	servconfig := &ServConfig{
-		port: os.Getenv("USER_PORT"),
+		listen: os.Getenv("USER_LISTEN"),
+		port:   os.Getenv("USER_PORT"),
 	}
 	time.Sleep(10 * time.Second)
 
@@ -90,7 +92,7 @@ func main() {
 	client := http.Client{}
 
 	controller := controller.NewGeoContollergRpc(client, redis, dbx)
-	port := fmt.Sprintf("0.0.0.0:%s", servconfig.port)
+	port := fmt.Sprintf("%s:%s", servconfig.listen, servconfig.port)
 	listner, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatal("Can't open connection")

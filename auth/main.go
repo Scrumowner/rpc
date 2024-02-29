@@ -12,7 +12,8 @@ import (
 )
 
 type ServConfig struct {
-	port string
+	listen string
+	port   string
 }
 type ConnConfig struct {
 	host string
@@ -20,7 +21,7 @@ type ConnConfig struct {
 }
 
 func main() {
-	godotenv.Load()
+	godotenv.Load(".env", "auth.env")
 	connconfig := &ConnConfig{
 		host: os.Getenv("USER_HOST"),
 		port: os.Getenv("USER_PORT"),
@@ -30,9 +31,10 @@ func main() {
 		log.Fatalf("Ошибка при подключении к серверу: %v", err)
 	}
 	servconfig := &ServConfig{
-		port: os.Getenv("AUTH_PORT"),
+		listen: os.Getenv("AUTH_LISTEN"),
+		port:   os.Getenv("AUTH_PORT"),
 	}
-	conn, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%s", servconfig.port))
+	conn, err := net.Listen("tcp", fmt.Sprintf("%s:%s", servconfig.listen, servconfig.port))
 	if err != nil {
 		log.Fatalf("Ошибка при прослушивании порта: %v", err)
 	}
