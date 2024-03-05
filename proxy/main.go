@@ -7,120 +7,74 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
-	"hugoproxy-main/proxy/controllers"
-	internalMiddleware "hugoproxy-main/proxy/middleware"
-	"log"
-	"net/http"
 	"os"
 	"os/signal"
+	"proxy/internal/router"
+
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"log"
+	"net/http"
+
+	"proxy/config"
+	"proxy/internal/modules"
+
+	internalMiddleware "proxy/internal/middleware"
 	"time"
 )
 
-type ServConfig struct {
-	listen string
-	port   string
-}
-type ConnConfig struct {
-	ServConfig
-	HugoAddr
-	GeoAddr
-	AuthAddr
-	UserAddr
-}
-type HugoAddr struct {
-	host string
-	port string
-}
-type GeoAddr struct {
-	host string
-	port string
-}
-type AuthAddr struct {
-	host string
-	port string
-}
-type UserAddr struct {
-	host string
-	port string
-}
-
 func main() {
-	godotenv.Load(".env", "proxy.env")
-	conn := &ConnConfig{
-		ServConfig: ServConfig{
-			listen: os.Getenv("USER_LISTEN"),
-			port:   os.Getenv("PORXY_PORT"),
-		},
-		HugoAddr: HugoAddr{
-			host: os.Getenv("HUGO_HOST"),
-			port: os.Getenv("HUGO_PORT"),
-		},
-		GeoAddr: GeoAddr{
-			host: os.Getenv("GEO_HOST"),
-			port: os.Getenv("GEO_PORT"),
-		},
-		AuthAddr: AuthAddr{
-			host: os.Getenv("AUTH_HOST"),
-			port: os.Getenv("AUTH_PORT"),
-		},
-		UserAddr: UserAddr{
-			host: os.Getenv("USER_HOST"),
-			port: os.Getenv("USER_PORT"),
-		},
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Fatal("Proxy can't read .env")
 	}
+	conn := config.NewConfig()
+	conn.Load()
 	time.Sleep(time.Second * 15)
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
 	sugar := logger.Sugar()
 	r := chi.NewRouter()
 	r.Use(middleware.DefaultLogger)
-	client := http.Client{}
-	geoConn, err := grpc.Dial(fmt.Sprintf("%s:%s", conn.GeoAddr.host, conn.GeoAddr.port), grpc.WithInsecure())
+	//geoConn, err := grpc.Dial(fmt.Sprintf("%s:%s", conn.GeoAddr.Host, conn.GeoAddr.Port), grpc.WithInsecure())
+	//if err != nil {
+	//	log.Printf("Can't dial to grpc %s", err)
+	//}
+	//
+	//sugar.Infof("Sucseful connnect to %s:%s", conn.GeoAddr.Host, conn.GeoAddr.Port)
+	authConn, err := grpc.Dial(fmt.Sprintf("%s:%s", conn.AuthAddr.Host, conn.AuthAddr.Port), grpc.WithInsecure())
 	if err != nil {
 		log.Printf("Can't dial to grpc %s", err)
 	}
-	authConn, err := grpc.Dial(fmt.Sprintf("%s:%s", conn.AuthAddr.host, conn.AuthAddr.port), grpc.WithInsecure())
+	sugar.Infof("Sucseful connnect to %s:%s", conn.AuthAddr.Host, conn.AuthAddr.Port)
+
+	userConn, err := grpc.Dial(fmt.Sprintf("%s:%s", conn.UserAddr.Host, conn.UserAddr.Port), grpc.WithInsecure())
 	if err != nil {
 		log.Printf("Can't dial to grpc %s", err)
 	}
-	userConn, err := grpc.Dial(fmt.Sprintf("%s:%s", conn.UserAddr.host, conn.UserAddr.port), grpc.WithInsecure())
-	if err != nil {
-		log.Printf("Can't dial to grpc %s", err)
-	}
-	sugar.Infof("Sucseful connnect to %s:%s", conn.GeoAddr.host, conn.GeoAddr.port)
-	sugar.Infof("Sucseful connnect to %s:%s", conn.AuthAddr.host, conn.AuthAddr.port)
-	sugar.Infof("Sucseful connnect to  %s:%s", conn.UserAddr.host, conn.UserAddr.port)
-	defer geoConn.Close()
+
+	sugar.Infof("Sucseful connnect to  %s:%s", conn.UserAddr.Host, conn.UserAddr.Port)
+	//defer geoConn.Close()
 	defer authConn.Close()
 	defer userConn.Close()
-	controller := controllers.NewControllers(sugar, client, geoConn, authConn, userConn)
-	rp := internalMiddleware.NewReverseProxy(controller, conn.HugoAddr.host, fmt.Sprintf(":%s", conn.HugoAddr.port))
-	r.Use(rp.ReverseProxy)
-	r.Route("/api", func(r chi.Router) {
-		r.Route("/auth", func(r chi.Router) {
-			r.Post("/register", controller.AuthController.Register)
-			r.Post("/login", controller.AuthController.Login)
-		})
-		r.Route("/user_service", func(r chi.Router) {
-			r.Post("/profile", controller.UserController.Profile)
-			r.Post("/list", controller.UserController.List)
-		})
-		r.Route("/address", func(r chi.Router) {
-			r.Post("/search", controller.SearchController.GetSearch)
-			r.Post("/geocode", controller.SearchController.GetGeo)
-		})
 
-	})
-	r.Route("/swagger", func(r chi.Router) {
-		r.Get("/index", controller.SwagController.GetSwaggerHtml)
-		r.Get("/swagger", controller.SwagController.GetSwaggerJson)
-	})
-	port := fmt.Sprintf(":%s", conn.ServConfig.port)
+	//amqpConnect, err := amqp.Dial("amqp://guest:guest@rabbitmq:5672/")
+	//if err != nil {
+	//	log.Fatal("Can't connect to amqp ")
+	//}
+	//usersRequsts := make(chan string)
+	//isAllow := make(chan bool)
+	//go ratelimit.RateWorker(usersRequsts, isAllow)
+	controller := controllers.NewControllers(sugar, userConn, authConn)
+	rp := internalMiddleware.NewReverseProxy(controller, conn.HugoAddr.Host, fmt.Sprintf(":%s", conn.HugoAddr.Port))
+	r.Use(rp.ReverseProxy)
+
+	ro := router.NewRouter(r, controller)
+
+	port := fmt.Sprintf(":%s", conn.ServConfig.Port)
 	server := http.Server{
 		Addr:         port,
-		Handler:      r,
+		Handler:      ro,
 		ReadTimeout:  time.Second * 10,
 		WriteTimeout: time.Second * 10,
 	}
@@ -164,8 +118,8 @@ func main() {
 //}
 
 //r.Route("/mycustompath", func(r chi.Router) {
-//	//r.Use(jwtauth.Verifier(storage.TokenAuth))
-//	//r.Use(jwtauth.Authenticator(storage.TokenAuth))
+//	//r.Use(jwtauth.Verifier(migrator.TokenAuth))
+//	//r.Use(jwtauth.Authenticator(migrator.TokenAuth))
 //	//r.Use(internalMiddleware.TokenAuthMiddleware)
 //	r.Get("/pprof/profile", pprof.Profile)
 //	r.Get("/pprof/trace", pprof.Trace)
@@ -179,26 +133,26 @@ func main() {
 //	r.Get("/pprof/threadcreate", pprof.Handler("threadcreate").ServeHTTP)
 //	r.Get("/debug/pprof/goroutine", fullGoroutineStackDump)
 //})
-//{"id":123,"name":"123","phone":"123","email":"123","password":"123"}
+//{"email":"123","phone":"123","password":"123"}
 //if configrpc == "rpc" {
 //	r.Route("/api", func(r chi.Router) {
-//		//r.Use(jwtauth.Verifier(storage.TokenAuth))
-//		//r.Use(jwtauth.Authenticator(storage.TokenAuth))
+//		//r.Use(jwtauth.Verifier(migrator.TokenAuth))
+//		//r.Use(jwtauth.Authenticator(migrator.TokenAuth))
 //		//r.Use(internalMiddleware.TokenAuthMiddleware)
 //		r.Route("/address", func(r chi.Router) {
 //
-//			r.Post("/search", controller.SearchController.GetSearch)
-//			r.Post("/geocode", controller.SearchController.GetGeoCode)
+//			r.Post("/search", controller.go.SearchController.GetSearch)
+//			r.Post("/geocode", controller.go.SearchController.GetGeoCode)
 //		})
 //	})
 //} else if configrpc == "json-rpc" {
 //	r.Route("/api", func(r chi.Router) {
-//		//r.Use(jwtauth.Verifier(storage.TokenAuth))
-//		//r.Use(jwtauth.Authenticator(storage.TokenAuth))
+//		//r.Use(jwtauth.Verifier(migrator.TokenAuth))
+//		//r.Use(jwtauth.Authenticator(migrator.TokenAuth))
 //		//r.Use(internalMiddleware.TokenAuthMiddleware)
 //		r.Route("/address", func(r chi.Router) {
 //
-//			r.Post("/search", controller.SearchControllerJsonRpc.GetSearch)
-//			r.Post("/geocode", controller.SearchControllerJsonRpc.GetGeoCode)
+//			r.Post("/search", controller.go.SearchControllerJsonRpc.GetSearch)
+//			r.Post("/geocode", controller.go.SearchControllerJsonRpc.GetGeoCode)
 //		})
 //	})

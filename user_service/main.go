@@ -4,51 +4,29 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/jmoiron/sqlx"
-	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
 	"log"
 	"net"
-	"os"
 	"time"
-	"user/controller"
-	"user/models"
-	pb "user/proto/user"
-	"user/storage"
+	"user/config"
+	"user/internal/infra/migrator"
+	"user/internal/models"
+	"user/internal/modules"
+	pb "user/proto"
 )
 
-type DbConfig struct {
-	user     string
-	password string
-	host     string
-	port     string
-	dbname   string
-}
-type ServConfig struct {
-	listen string
-	port   string
-}
-
 func main() {
-	godotenv.Load()
-	dbconfig := DbConfig{
-		user:     os.Getenv("POSTGRES_USER"),
-		password: os.Getenv("POSTGRES_PASSWORD"),
-		host:     os.Getenv("POSTGRES_HOST"),
-		port:     os.Getenv("POSTGRES_PORT"),
-		dbname:   os.Getenv("POSTGRES_DB"),
-	}
-	servconfig := ServConfig{
-		listen: os.Getenv("USER_LISTEN"),
-		port:   os.Getenv("USER_PORT"),
-	}
+
+	cfg := config.NewcConfig()
+	cfg.Load()
 	time.Sleep(time.Second * 15)
 	dbAddr := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s sslmode=disable",
-		dbconfig.user,
-		dbconfig.password,
-		dbconfig.host,
-		dbconfig.port,
-		dbconfig.dbname,
+		cfg.User,
+		cfg.Password,
+		cfg.Host,
+		cfg.Port,
+		cfg.Dbname,
 	)
 	db, err := sql.Open("postgres", dbAddr)
 	if err != nil {
@@ -64,22 +42,28 @@ func main() {
 	if err == nil {
 		log.Println("Sqlx connect to postgres")
 	}
-	migrator := storage.NewMigrator(dbx)
+	migrator := migrator.NewMigrator(dbx)
 	user := &models.User{}
 	migrator.Migrate(user)
 
-	controller := controller.NewUserController(dbx)
-	port := fmt.Sprintf("%s:%s", servconfig.listen, servconfig.port)
+	controller := modules.NewControllers(dbx)
+
+	port := fmt.Sprintf("%s:%s", cfg.ServConfig.Listen, cfg.ServConfig.Port)
+
 	conn, err := net.Listen("tcp", port)
+
 	if err != nil {
 		log.Fatalf("Ошибка при прослушивании порта: %v", err)
 	}
 	server := grpc.NewServer()
-	pb.RegisterUserServiceServer(server, controller)
-	log.Println("Starting server auth")
+	pb.RegisterUserServiceServer(server, controller.User)
+	log.Println("Starting server user_service")
 	err = server.Serve(conn)
 	if err != nil {
 		log.Println("Can't serve grpc user_service")
 	}
 
 }
+
+//protoc -I . user.proto --go_out=./proto/ --go_opt=paths=source_relative --go-grpc_out=./proto/ --go-grpc_opt=paths=source_relative
+//export PATH="$PATH:$(go env GOPATH)/bin"

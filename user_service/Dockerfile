@@ -16,11 +16,12 @@ FROM alpine:latest
 WORKDIR /app
 
 # Скопируйте исполняемый файл из первой стадии сборки
+COPY --from=builder /usr/local/go/src/user_service/.env .
 COPY --from=builder /usr/local/go/src/user_service/main .
 
 # Установите права на выполнение для исполняемого файла
 
 
-EXPOSE 1237
+EXPOSE 8083
 
 CMD ["./main"]

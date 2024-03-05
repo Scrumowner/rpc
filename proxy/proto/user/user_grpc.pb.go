@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v3.12.4
-// source: user_service.proto
+// source: user.proto
 
 package userv1
 
@@ -19,7 +19,6 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	UserService_Profile_FullMethodName = "/user_proto.UserService/Profile"
 	UserService_List_FullMethodName    = "/user_proto.UserService/List"
 	UserService_GetUser_FullMethodName = "/user_proto.UserService/GetUser"
 	UserService_SetUser_FullMethodName = "/user_proto.UserService/SetUser"
@@ -29,8 +28,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type UserServiceClient interface {
-	Profile(ctx context.Context, in *ProfileRequest, opts ...grpc.CallOption) (*User, error)
-	List(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*ListResponse, error)
+	List(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*Users, error)
 	GetUser(ctx context.Context, in *ProfileRequest, opts ...grpc.CallOption) (*User, error)
 	SetUser(ctx context.Context, in *User, opts ...grpc.CallOption) (*EmptyRequest, error)
 }
@@ -43,17 +41,8 @@ func NewUserServiceClient(cc grpc.ClientConnInterface) UserServiceClient {
 	return &userServiceClient{cc}
 }
 
-func (c *userServiceClient) Profile(ctx context.Context, in *ProfileRequest, opts ...grpc.CallOption) (*User, error) {
-	out := new(User)
-	err := c.cc.Invoke(ctx, UserService_Profile_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *userServiceClient) List(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*ListResponse, error) {
-	out := new(ListResponse)
+func (c *userServiceClient) List(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*Users, error) {
+	out := new(Users)
 	err := c.cc.Invoke(ctx, UserService_List_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -83,8 +72,7 @@ func (c *userServiceClient) SetUser(ctx context.Context, in *User, opts ...grpc.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility
 type UserServiceServer interface {
-	Profile(context.Context, *ProfileRequest) (*User, error)
-	List(context.Context, *EmptyRequest) (*ListResponse, error)
+	List(context.Context, *EmptyRequest) (*Users, error)
 	GetUser(context.Context, *ProfileRequest) (*User, error)
 	SetUser(context.Context, *User) (*EmptyRequest, error)
 	mustEmbedUnimplementedUserServiceServer()
@@ -94,10 +82,7 @@ type UserServiceServer interface {
 type UnimplementedUserServiceServer struct {
 }
 
-func (UnimplementedUserServiceServer) Profile(context.Context, *ProfileRequest) (*User, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Profile not implemented")
-}
-func (UnimplementedUserServiceServer) List(context.Context, *EmptyRequest) (*ListResponse, error) {
+func (UnimplementedUserServiceServer) List(context.Context, *EmptyRequest) (*Users, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
 }
 func (UnimplementedUserServiceServer) GetUser(context.Context, *ProfileRequest) (*User, error) {
@@ -117,24 +102,6 @@ type UnsafeUserServiceServer interface {
 
 func RegisterUserServiceServer(s grpc.ServiceRegistrar, srv UserServiceServer) {
 	s.RegisterService(&UserService_ServiceDesc, srv)
-}
-
-func _UserService_Profile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ProfileRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(UserServiceServer).Profile(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: UserService_Profile_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServiceServer).Profile(ctx, req.(*ProfileRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _UserService_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -199,10 +166,6 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*UserServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Profile",
-			Handler:    _UserService_Profile_Handler,
-		},
-		{
 			MethodName: "List",
 			Handler:    _UserService_List_Handler,
 		},
@@ -216,5 +179,5 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "user_service.proto",
+	Metadata: "user.proto",
 }

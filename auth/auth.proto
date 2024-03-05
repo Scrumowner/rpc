@@ -3,29 +3,22 @@ syntax = "proto3";
 package auth_proto;
 
 option go_package="geo.auth.v1;authv1";
-import "google/api/annotations.proto";
+
 
 
 service AuthService {
-  rpc Register(User) returns (RegisterResponse) {
-    option (google.api.http) = {
-      post : "/api/auth/register"
-    };
-  }
-  rpc Login(User) returns (Token) {
-    option (google.api.http) = {
-      post : "/api/auth/login"
-    };
-  }
+  rpc Register(User) returns (RegisterResponse);
+  rpc Login(User) returns (Token) ;
   rpc Authorised(Token) returns (AuthorisedResponse);
 }
 
 message User {
   string email = 1;
-  string password = 2;
+  string phone = 2;
+  string password = 3;
 }
 message RegisterResponse {
-  string response = 1;
+  bool IsRegistred = 1;
 }
 message Token {
   string token = 1;

@@ -14,8 +14,9 @@ RUN go build -o main
 FROM alpine:latest
 
 # Копирование исполняемого файла из первой стадии
-COPY --from=builder /usr/local/go/src/auth/main /main
+COPY --from=builder /usr/local/go/src/auth/.env .
+COPY --from=builder /usr/local/go/src/auth/main .
 
-EXPOSE 1235
+EXPOSE 8082
 
 CMD ["/main"]

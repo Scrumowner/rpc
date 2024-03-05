@@ -1,18 +1,6 @@
 version: '3.9'
 
 services:
-  rabit:
-    image: rabbitmq:3-managment-alpine
-    container_name: rabbitmq
-    ports:
-      - 5672:5672
-      - 15672:15672
-    restart: on-failure
-    volumes:
-      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
-      - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq/
-    networks:
-      - mylocal
   hugo:
     image: klakegg/hugo:0.101.0-ext-alpine
     container_name: hugo
@@ -33,44 +21,15 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-
     volumes:
       -  ./postgresql.conf:/etc/postgresql/postgresql.conf
-    networks:
-      - mylocal
-  cache:
-    image: redis:latest
-    container_name: cache
-    ports:
-      -  ${REDIS_PORT}:${REDIS_PORT}
     networks:
       - mylocal
   proxy:
     build: ./proxy
     container_name: proxy
     ports:
-      - ${PROXY_PORT}:${PROXY_PORT}
-    restart: on-failure
-    networks:
-      - mylocal
-    depends_on:
-      - geo
-  geo:
-    build: ./geo
-    container_name: geo
-    ports:
-      - ${GEO_PORT}:${GEO_PORT}
-    depends_on:
-      - db
-      - cache
-    restart: on-failure
-    networks:
-      - mylocal
-  auth:
-    build: ./auth
-    container_name: auth
-    ports:
-      - ${AUTH_PORT}:${AUTH_PORT}
+      - ${PORXY_PORT}:${PORXY_PORT}
     restart: on-failure
     networks:
       - mylocal
@@ -82,7 +41,14 @@ services:
     restart: on-failure
     networks:
       - mylocal
-
+  auth:
+      build: ./auth
+      container_name: auth
+      ports:
+        - ${AUTH_PORT}:${AUTH_PORT}
+      restart: on-failure
+      networks:
+        - mylocal
 networks:
   mylocal:
     driver: bridge

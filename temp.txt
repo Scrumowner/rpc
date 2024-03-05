@@ -1,0 +1,38 @@
+  rabit:
+    image: rabbitmq:3-managment-alpine
+    container_name: rabbitmq
+    ports:
+      - 5672:5672
+      - 15672:15672
+    restart: on-failure
+    volumes:
+      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+      - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq/
+    networks:
+      - mylocal
+    cache:
+      image: redis:latest
+      container_name: cache
+      ports:
+        -  ${REDIS_PORT}:${REDIS_PORT}
+      networks:
+        - mylocal
+    geo:
+      build: ./geo
+      container_name: geo
+      ports:
+        - ${GEO_PORT}:${GEO_PORT}
+      depends_on:
+        - db
+        - cache
+      restart: on-failure
+      networks:
+        - mylocal
+    auth:
+      build: ./auth
+      container_name: auth
+      ports:
+        - ${AUTH_PORT}:${AUTH_PORT}
+      restart: on-failure
+      networks:
+        - mylocal

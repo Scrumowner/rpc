@@ -36,7 +36,7 @@ type ServConfig struct {
 }
 
 func main() {
-	godotenv.Load(".env", "service.env")
+	godotenv.Load(".env", ".env")
 	dbconfig := &DbConfig{
 		user:     os.Getenv("POSTGRES_USER"),
 		password: os.Getenv("POSTGRES_PASSWORD"),

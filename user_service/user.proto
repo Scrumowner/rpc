@@ -3,39 +3,29 @@ syntax = "proto3";
 package user_proto;
 
 option go_package = "geo.user_service.v1;userv1";
-import "google/api/annotations.proto";
+
 
 
 service UserService {
-  rpc Profile (ProfileRequest) returns (User) {
-    option(google.api.http) = {
-      post : "/api/user_service/profile"
-      body : "*"
-    };
-  }
-  rpc List (EmptyRequest) returns (ListResponse) {
-    option(google.api.http) = {
-      get : "/api/user_service/list"
-    };
-  }
+  rpc List (EmptyRequest) returns (Users) ;
   rpc GetUser (ProfileRequest) returns (User);
   rpc SetUser (User) returns (EmptyRequest);
 
 }
 
-
-
 message ProfileRequest {
     string email = 1;
+    string phone = 2;
 }
 message User {
   string email = 1;
-  string password = 2;
+  string phone = 2;
+  string password = 3;
 }
 
 message EmptyRequest {
 
 }
-message ListResponse {
+message Users {
   repeated User user = 1;
 }
