@@ -1,7 +1,7 @@
 package main
 
 import (
-	"hugoproxy-main/notify/config"
+	"notify/config"
 )
 
 func main() {

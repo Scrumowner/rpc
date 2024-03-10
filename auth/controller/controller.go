@@ -43,7 +43,7 @@ func (c *AuthController) Login(ctx context.Context, req *pb.User) (*pb.Token, er
 	if user.Password != req.Password {
 		return &pb.Token{Token: ""}, fmt.Errorf("Unknown  password")
 	}
-	token, err := c.auth.GenerateToken(user.Email, user.Password, 0)
+	token, err := c.auth.GenerateToken(user.Email, user.Phone, 0)
 	if err != nil {
 		return &pb.Token{Token: ""}, fmt.Errorf("Internale error")
 	}
@@ -56,8 +56,8 @@ func (c *AuthController) Authorised(ctx context.Context, req *pb.Token) (*pb.Aut
 	if !isValid {
 		return &pb.AuthorisedResponse{IsAuthorised: false}, fmt.Errorf("is unauthorised")
 	}
-
-	user, err := c.UserServiceClient.GetUser(ctx, &pbu.ProfileRequest{Email: claim.Email, Phone: claim.Phone})
+	usr := pbu.ProfileRequest{Email: claim.Email, Phone: claim.Phone}
+	user, err := c.UserServiceClient.GetUser(ctx, &usr)
 	if err != nil {
 		return &pb.AuthorisedResponse{IsAuthorised: false}, fmt.Errorf("is unauthorised")
 	}

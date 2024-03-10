@@ -14,20 +14,10 @@ import (
 	"strings"
 )
 
-//	func NewSwaggerer(logger *zap.SugaredLogger, client http.Client, responder responder.Responder) *Swagger {
-//		return &Swagger{
-//			responder:      responder,
-//			logger:         logger,
-//			swaggerservice: service.NewSwaggerService(),
-//		}
-//	}
-//
-
-//	type Swagger struct {
-//		responder      responder.Responder
-//		swaggerservice service.SwaggerServiceer
-//		logger         *zap.SugaredLogger
-//	}
+// ///////////////////////////////////////////////////////AUTH  ENDPOINT HANDLERS//////////////////////////////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 type Auth struct {
 	responder responder.Responder
 	logger    *zap.SugaredLogger
@@ -39,14 +29,6 @@ func NewAuthController(logger *zap.SugaredLogger, responder responder.Responder,
 		responder: responder,
 		logger:    logger,
 		rpc:       pba.NewAuthServiceClient(cc),
-	}
-}
-
-func NewUserController(responder responder.Responder, logger *zap.SugaredLogger, cc grpc.ClientConnInterface) *User {
-	return &User{
-		responder: responder,
-		logger:    logger,
-		rpc:       pbu.NewUserServiceClient(cc),
 	}
 }
 
@@ -83,10 +65,17 @@ func (controller *Auth) Login(w http.ResponseWriter, r *http.Request) {
 	token := fmt.Sprintf("Bearer" + " " + resp.Token)
 	controller.responder.OutputJSON(w, token)
 }
+
 func (controller *Auth) Verif(token string) bool {
 	ctx := context.Background()
 	raws := strings.Split(token, " ")
-	isAuth, err := controller.rpc.Authorised(ctx, &pba.Token{Token: raws[0]})
+	if len(raws) != 2 {
+		return false
+	}
+	req := pba.Token{
+		Token: raws[1],
+	}
+	isAuth, err := controller.rpc.Authorised(ctx, &req)
 	if err != nil {
 		return false
 	}
@@ -96,6 +85,24 @@ func (controller *Auth) Verif(token string) bool {
 
 	return true
 
+}
+
+// ///////////////////////////////////////////////////////USER ENDPOINT HANDLERS//////////////////////////////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+func NewUserController(responder responder.Responder, logger *zap.SugaredLogger, cc grpc.ClientConnInterface) *User {
+	return &User{
+		responder: responder,
+		logger:    logger,
+		rpc:       pbu.NewUserServiceClient(cc),
+	}
+}
+
+type User struct {
+	responder responder.Responder
+	logger    *zap.SugaredLogger
+	rpc       pbu.UserServiceClient
 }
 
 func (controller *User) GetUser(w http.ResponseWriter, r *http.Request) {
@@ -112,6 +119,24 @@ func (controller *User) GetUser(w http.ResponseWriter, r *http.Request) {
 	profileOut := ProfileResponse{Email: user.GetEmail(), Phone: user.GetPhone(), Password: user.GetPassword()}
 	b, _ := json.Marshal(&profileOut)
 	controller.responder.OutputJSON(w, string(b))
+}
+
+func (controller *User) List(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
+	req := pbu.EmptyRequest{}
+	users, err := controller.rpc.List(ctx, &req)
+	if err != nil {
+		controller.responder.ErrorBadRequest(w, fmt.Errorf("Permission denied", err))
+		return
+
+	}
+	var list ListUser
+	for _, user := range users.User {
+		list.Users = append(list.Users, UserFromRpc{Email: user.GetEmail(), Phone: user.GetPhone(), Password: user.GetPassword()})
+	}
+	b, err := json.Marshal(&list)
+	controller.responder.OutputJSON(w, string(b))
+
 }
 
 func (contorller *User) SetUser(w http.ResponseWriter, r *http.Request) {
@@ -147,6 +172,11 @@ func (controller *User) Profile(w http.ResponseWriter, r *http.Request) {
 	controller.responder.OutputJSON(w, string(b))
 
 }
+
+// ///////////////////////////////////////////////////////GEO ENDPOINT HANDLERS//////////////////////////////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //	func NewSearchController(responder responder.Responder, logger *zap.SugaredLogger, cc grpc.ClientConnInterface) *Search {
 //		return &Search{
@@ -196,31 +226,26 @@ func (controller *User) Profile(w http.ResponseWriter, r *http.Request) {
 //	controller.responder.OutputJSON(w, string(json))
 //
 //}
+
+// ///////////////////////////////////////////////////////SWAGGER ENDPOINT HANDLERS//////////////////////////////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//	func NewSwaggerer(logger *zap.SugaredLogger, client http.Client, responder responder.Responder) *Swagger {
+//		return &Swagger{
+//			responder:      responder,
+//			logger:         logger,
+//			swaggerservice: service.NewSwaggerService(),
+//		}
+//	}
 //
 
-func (controller *User) List(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
-	req := pbu.EmptyRequest{}
-	users, err := controller.rpc.List(ctx, &req)
-	if err != nil {
-		controller.responder.ErrorBadRequest(w, fmt.Errorf("Permission denied", err))
-		return
-
-	}
-	var list ListUser
-	for _, user := range users.User {
-		list.Users = append(list.Users, UserFromRpc{Email: user.GetEmail(), Phone: user.GetPhone(), Password: user.GetPassword()})
-	}
-	b, err := json.Marshal(&list)
-	controller.responder.OutputJSON(w, string(b))
-
-}
-
-type User struct {
-	responder responder.Responder
-	logger    *zap.SugaredLogger
-	rpc       pbu.UserServiceClient
-}
+//	type Swagger struct {
+//		responder      responder.Responder
+//		swaggerservice service.SwaggerServiceer
+//		logger         *zap.SugaredLogger
+//	}
 
 //func (controller *Swagger) GetSwaggerHtml(w http.ResponseWriter, r *http.Request) {
 //	html := controller.swaggerservice.GetSwaggerHtml()

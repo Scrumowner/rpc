@@ -97,15 +97,6 @@ func main() {
 
 }
 
-//log.Println("Server exiting")
-//router := chi.NewRouter()
-//router.Use()
-//func Auth(next http.Handler) http.Handler {
-//	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-//
-//	})
-//}
-
 //func fullGoroutineStackDump(w http.ResponseWriter, r *http.Request) {
 //	// Получаем полный стек горутин
 //	buf := make([]byte, 1<<20)
@@ -133,26 +124,3 @@ func main() {
 //	r.Get("/pprof/threadcreate", pprof.Handler("threadcreate").ServeHTTP)
 //	r.Get("/debug/pprof/goroutine", fullGoroutineStackDump)
 //})
-//{"email":"123","phone":"123","password":"123"}
-//if configrpc == "rpc" {
-//	r.Route("/api", func(r chi.Router) {
-//		//r.Use(jwtauth.Verifier(migrator.TokenAuth))
-//		//r.Use(jwtauth.Authenticator(migrator.TokenAuth))
-//		//r.Use(internalMiddleware.TokenAuthMiddleware)
-//		r.Route("/address", func(r chi.Router) {
-//
-//			r.Post("/search", controller.go.SearchController.GetSearch)
-//			r.Post("/geocode", controller.go.SearchController.GetGeoCode)
-//		})
-//	})
-//} else if configrpc == "json-rpc" {
-//	r.Route("/api", func(r chi.Router) {
-//		//r.Use(jwtauth.Verifier(migrator.TokenAuth))
-//		//r.Use(jwtauth.Authenticator(migrator.TokenAuth))
-//		//r.Use(internalMiddleware.TokenAuthMiddleware)
-//		r.Route("/address", func(r chi.Router) {
-//
-//			r.Post("/search", controller.go.SearchControllerJsonRpc.GetSearch)
-//			r.Post("/geocode", controller.go.SearchControllerJsonRpc.GetGeoCode)
-//		})
-//	})

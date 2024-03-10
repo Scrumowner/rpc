@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"rpc/service/config"
 	"strings"
 )
 
@@ -14,20 +15,23 @@ const addressUrl = "https://cleaner.dadata.ru/api/v1/clean/address"
 
 const postMethod = "POST"
 
-const tokenAuthorization string = "Token ff49ea7a69ca05be457b7836ecfe9fbb6dac1417"
-const tokenXSecret string = "85555da9ba833d12825aced346392b6df0ad5697"
-
 type Providerer interface {
 	GetSearchFromApi(query SearchRequest) ReworkedSearchResponse
 	GetGeoCodeFromApi(query GeocodeRequest) ReworkedSearchResponse
 }
 
-func NewProvider(client http.Client) Providerer {
-	return &GeoProvider{client: client}
+func NewProvider(client http.Client, cfg *config.Config) Providerer {
+	return &GeoProvider{
+		client: client,
+		tokenA: cfg.TokenA,
+		tokenX: cfg.TokenX,
+	}
 }
 
 type GeoProvider struct {
 	client http.Client
+	tokenA string
+	tokenX string
 }
 
 type SearchRequest struct {
@@ -52,8 +56,8 @@ func (provider *GeoProvider) GetSearchFromApi(query SearchRequest) ReworkedSearc
 	}
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", tokenAuthorization)
-	req.Header.Add("X-Secret", tokenXSecret)
+	req.Header.Add("Authorization", provider.tokenA)
+	req.Header.Add("X-Secret", provider.tokenX)
 
 	res, err := provider.client.Do(req)
 	if err != nil {
@@ -86,7 +90,8 @@ func (provider *GeoProvider) GetGeoCodeFromApi(query GeocodeRequest) ReworkedSea
 	}
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", tokenAuthorization)
+	req.Header.Add("Authorization", provider.tokenA)
+	req.Header.Add("X-Secret", provider.tokenX)
 	resp, err := provider.client.Do(req)
 	if err != nil {
 		return ReworkedSearchResponse{}

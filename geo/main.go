@@ -11,7 +11,7 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"os"
+	"rpc/service/config"
 	controller "rpc/service/controller"
 	"rpc/service/internal/migrator"
 	"rpc/service/models"
@@ -19,47 +19,20 @@ import (
 	"time"
 )
 
-type DbConfig struct {
-	user     string
-	password string
-	host     string
-	port     string
-	dbname   string
-}
-type CacheConfig struct {
-	host string
-	port string
-}
-type ServConfig struct {
-	listen string
-	port   string
-}
-
 func main() {
-	godotenv.Load(".env", ".env")
-	dbconfig := &DbConfig{
-		user:     os.Getenv("POSTGRES_USER"),
-		password: os.Getenv("POSTGRES_PASSWORD"),
-		host:     os.Getenv("POSTGRES_HOST"),
-		port:     os.Getenv("POSTGRES_PORT"),
-		dbname:   os.Getenv("POSTGRES_DB"),
-	}
-	cacheconfig := &CacheConfig{
-		host: os.Getenv("REDIS_HOST"),
-		port: os.Getenv("REDIS_PORT"),
-	}
-	servconfig := &ServConfig{
-		listen: os.Getenv("USER_LISTEN"),
-		port:   os.Getenv("USER_PORT"),
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Fatal("Can't load .env geo service")
 	}
 	time.Sleep(10 * time.Second)
-
+	cfg := config.NewConfig()
+	cfg.Load()
 	dbAddr := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s sslmode=disable",
-		dbconfig.user,
-		dbconfig.password,
-		dbconfig.host,
-		dbconfig.port,
-		dbconfig.dbname,
+		cfg.DbConfig.User,
+		cfg.DbConfig.Password,
+		cfg.DbConfig.Host,
+		cfg.DbConfig.Port,
+		cfg.DbConfig.Dbname,
 	)
 	db, err := sql.Open("postgres", dbAddr)
 	if err != nil {
@@ -81,7 +54,7 @@ func main() {
 
 	migrator := migrator.NewMigrator(dbx)
 	migrator.Migrate(&address, &geo)
-	cache := fmt.Sprintf("%s:%s", cacheconfig.host, cacheconfig.port)
+	cache := fmt.Sprintf("%s:%s", cfg.CacheConfig.Host, cfg.CacheConfig.Port)
 	redis := redis.NewClient(&redis.Options{
 		Network:      "tcp",
 		Addr:         cache,
@@ -91,8 +64,8 @@ func main() {
 	})
 	client := http.Client{}
 
-	controller := controller.NewGeoContollergRpc(client, redis, dbx)
-	port := fmt.Sprintf("%s:%s", servconfig.listen, servconfig.port)
+	controller := controller.NewGeoContollergRpc(client, redis, dbx, cfg)
+	port := fmt.Sprintf("%s:%s", cfg.Listen, cfg.Port)
 	listner, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatal("Can't open connection")

@@ -1,6 +1,6 @@
 package app
 
-import "hugoproxy-main/notify/config"
+import "notify/config"
 
 type Application interface {
 	Runner

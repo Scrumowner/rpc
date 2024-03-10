@@ -3,8 +3,8 @@ package provider
 import (
 	"fmt"
 	"go.uber.org/zap"
-	"hugoproxy-main/notify/config"
 	"net/smtp"
+	"notify/config"
 )
 
 const (

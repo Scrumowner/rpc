@@ -36,6 +36,7 @@ func (s *UserStorage) GetUserFromStorage(ctx context.Context, user *models.User)
 	if err != nil {
 		return nil, fmt.Errorf("Error from storage", err)
 	}
+
 	return userFromStorage, nil
 }
 

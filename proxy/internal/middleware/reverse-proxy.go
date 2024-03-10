@@ -36,14 +36,14 @@ func (rp *ReverseProxy) ReverseProxy(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
-		if strings.HasPrefix(r.URL.Path, "/user") || strings.HasPrefix(r.URL.Path, "/geo") || strings.HasPrefix(r.URL.Path, "/swagger") {
-			token := r.Header.Get("Authorziation")
+		if strings.HasPrefix(r.URL.Path, "/user") || strings.HasPrefix(r.URL.Path, "api/address") || strings.HasPrefix(r.URL.Path, "/swagger") {
+			token := r.Header.Get("Authorization")
 			isAllow := rp.controller.AuthController.Verif(token)
 			if !isAllow {
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
-			//if strings.HasPrefix(r.URL.Path, "/api/geo") {
+			//if strings.HasPrefix(r.URL.Path, "api/address") {
 			//	token := r.Header.Get("Authorization")
 			//	splitedToken := strings.Split(token, " ")
 			//	rp.req <- splitedToken[1]
@@ -60,10 +60,6 @@ func (rp *ReverseProxy) ReverseProxy(next http.Handler) http.Handler {
 			//		}
 			//	}
 			//
-			//}
-			//if isAuth := rp.controller.AuthController.Verif(r.Header.Get("Authorization")); !isAuth {
-			//	w.WriteHeader(http.StatusUnauthorized)
-			//	return
 			//}
 			next.ServeHTTP(w, r)
 			return

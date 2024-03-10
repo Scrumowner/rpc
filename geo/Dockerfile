@@ -13,8 +13,9 @@ RUN go build -o main
 FROM alpine:latest
 
 # Копирование исполняемого файла из первой стадии
-COPY --from=builder /usr/local/go/src/geo/main /main
+COPY --from=builder /usr/local/go/src/geo/.env .
+COPY --from=builder /usr/local/go/src/geo/main .
 
-EXPOSE 1234
+EXPOSE 8081
 
 CMD ["/main"]

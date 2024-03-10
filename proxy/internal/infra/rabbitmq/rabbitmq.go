@@ -3,7 +3,7 @@ package rabbitmq
 import (
 	"fmt"
 	"github.com/streadway/amqp"
-	"hugoproxy-main/proxy/internal/infra/queue"
+	"proxy/internal/infra/queue"
 )
 
 type RabbitMQ struct {

@@ -16,10 +16,11 @@ func NewRouter(r *chi.Mux, c *controllers.Controllers) *chi.Mux {
 		r.Post("/register", c.AuthController.Register)
 		r.Post("/login", c.AuthController.Login)
 	})
-	//r.Route("/address", func(r chi.Router) {
-	//	r.Post("/search", controller.SearchController.GetSearch)
-	//	r.Post("/geocode", controller.SearchController.GetGeo)
+	//r.Route("/api/address", func(r chi.Router) {
+	//	r.Post("/search")
+	//	r.Post("/geocode")
 	//})
+
 	//r.Route("/swagger", func(r chi.Router) {
 	//	r.Get("/index", controller.SwagController.GetSwaggerHtml)
 	//	r.Get("/swagger", controller.SwagController.GetSwaggerJson)

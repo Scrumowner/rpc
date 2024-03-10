@@ -6,6 +6,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/redis/go-redis/v9"
 	"net/http"
+	"rpc/service/config"
 	"rpc/service/models"
 	"rpc/service/provider"
 	"rpc/service/storage"
@@ -22,8 +23,8 @@ type GeoService struct {
 	storageProxy *storage.ProxyCache
 }
 
-func NewGeoService(client http.Client, redis *redis.Client, db *sqlx.DB) GeoServiceer {
-	return &GeoService{provider: provider.NewProvider(client), storageProxy: storage.NewProxyCache(redis, db)}
+func NewGeoService(client http.Client, redis *redis.Client, db *sqlx.DB, cfg *config.Config) GeoServiceer {
+	return &GeoService{provider: provider.NewProvider(client, cfg), storageProxy: storage.NewProxyCache(redis, db)}
 }
 
 func (geo *GeoService) GetSearch(r models.SearchRequest) (string, error) {
