@@ -36,12 +36,12 @@ func main() {
 	sugar := logger.Sugar()
 	r := chi.NewRouter()
 	r.Use(middleware.DefaultLogger)
-	//geoConn, err := grpc.Dial(fmt.Sprintf("%s:%s", conn.GeoAddr.Host, conn.GeoAddr.Port), grpc.WithInsecure())
-	//if err != nil {
-	//	log.Printf("Can't dial to grpc %s", err)
-	//}
-	//
-	//sugar.Infof("Sucseful connnect to %s:%s", conn.GeoAddr.Host, conn.GeoAddr.Port)
+	geoConn, err := grpc.Dial(fmt.Sprintf("%s:%s", conn.GeoAddr.Host, conn.GeoAddr.Port), grpc.WithInsecure())
+	if err != nil {
+		log.Printf("Can't dial to grpc %s", err)
+	}
+
+	sugar.Infof("Sucseful connnect to %s:%s", conn.GeoAddr.Host, conn.GeoAddr.Port)
 	authConn, err := grpc.Dial(fmt.Sprintf("%s:%s", conn.AuthAddr.Host, conn.AuthAddr.Port), grpc.WithInsecure())
 	if err != nil {
 		log.Printf("Can't dial to grpc %s", err)
@@ -54,7 +54,7 @@ func main() {
 	}
 
 	sugar.Infof("Sucseful connnect to  %s:%s", conn.UserAddr.Host, conn.UserAddr.Port)
-	//defer geoConn.Close()
+	defer geoConn.Close()
 	defer authConn.Close()
 	defer userConn.Close()
 
@@ -65,8 +65,8 @@ func main() {
 	//usersRequsts := make(chan string)
 	//isAllow := make(chan bool)
 	//go ratelimit.RateWorker(usersRequsts, isAllow)
-	controller := controllers.NewControllers(sugar, userConn, authConn)
-	rp := internalMiddleware.NewReverseProxy(controller, conn.HugoAddr.Host, fmt.Sprintf(":%s", conn.HugoAddr.Port))
+	controller := controllers.NewControllers(sugar, userConn, authConn, geoConn)
+	rp := internalMiddleware.NewReverseProxy(controller, fmt.Sprintf("http://hugo"), fmt.Sprintf(":%s", conn.HugoAddr.Port))
 	r.Use(rp.ReverseProxy)
 
 	ro := router.NewRouter(r, controller)

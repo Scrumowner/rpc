@@ -12,7 +12,6 @@ import (
 
 const geoUrl = "http://suggestions.dadata.ru/suggestions/api/4_1/rs/geolocate/address"
 const addressUrl = "https://cleaner.dadata.ru/api/v1/clean/address"
-
 const postMethod = "POST"
 
 type Providerer interface {
@@ -56,7 +55,7 @@ func (provider *GeoProvider) GetSearchFromApi(query SearchRequest) ReworkedSearc
 	}
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", provider.tokenA)
+	req.Header.Add("Authorization", fmt.Sprintf("Token %s", provider.tokenA))
 	req.Header.Add("X-Secret", provider.tokenX)
 
 	res, err := provider.client.Do(req)
@@ -90,7 +89,7 @@ func (provider *GeoProvider) GetGeoCodeFromApi(query GeocodeRequest) ReworkedSea
 	}
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", provider.tokenA)
+	req.Header.Add("Authorization", fmt.Sprintf("Token %s", provider.tokenA))
 	req.Header.Add("X-Secret", provider.tokenX)
 	resp, err := provider.client.Do(req)
 	if err != nil {

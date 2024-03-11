@@ -25,6 +25,13 @@ services:
       -  ./postgresql.conf:/etc/postgresql/postgresql.conf
     networks:
       - mylocal
+  cache:
+    image: redis:latest
+    container_name: cache
+    ports:
+      - ${REDIS_PORT}:${REDIS_PORT}
+    networks:
+      - mylocal
   proxy:
     build: ./proxy
     container_name: proxy
@@ -49,6 +56,17 @@ services:
       restart: on-failure
       networks:
         - mylocal
+  geo:
+    build: ./geo
+    container_name: geo
+    ports:
+      - ${GEO_PORT}:${GEO_PORT}
+    depends_on:
+      - db
+      - cache
+    restart: on-failure
+    networks:
+      - mylocal
 networks:
   mylocal:
     driver: bridge

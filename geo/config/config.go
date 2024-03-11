@@ -28,8 +28,8 @@ func NewConfig() *Config {
 }
 
 func (c *Config) Load() {
-	c.Listen = os.Getenv("USER_LISTEN")
-	c.Port = os.Getenv("USER_PORT")
+	c.Listen = os.Getenv("GEO_LISTEN")
+	c.Port = os.Getenv("GEO_PORT")
 	c.TokenA = os.Getenv("USER_TOKEN_A")
 	c.TokenX = os.Getenv("USER_TOKEN_X")
 	c.DbConfig = &DbConfig{

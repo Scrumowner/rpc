@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"proxy/internal/infra/responder"
 	pba "proxy/proto/auth"
+	pbs "proxy/proto/geo"
 	pbu "proxy/proto/user"
 	"strings"
 )
@@ -178,54 +179,60 @@ func (controller *User) Profile(w http.ResponseWriter, r *http.Request) {
 // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//	func NewSearchController(responder responder.Responder, logger *zap.SugaredLogger, cc grpc.ClientConnInterface) *Search {
-//		return &Search{
-//			responder: responder,
-//			logger:    logger,
-//			rpc:       pb.NewGeoServiceClient(cc),
-//		}
-//	}
+func NewSearchController(responder responder.Responder, logger *zap.SugaredLogger, cc grpc.ClientConnInterface) *Search {
+	return &Search{
+		responder: responder,
+		logger:    logger,
+		rpc:       pbs.NewGeoServiceClient(cc),
+	}
+}
 
-//type Search struct {
-//	responder responder.Responder
-//	logger    *zap.SugaredLogger
-//	rpc       pb.GeoServiceClient
-//}
+type Search struct {
+	responder responder.Responder
+	logger    *zap.SugaredLogger
+	rpc       pbs.GeoServiceClient
+}
 
-//func (controller *Search) GetSearch(w http.ResponseWriter, r *http.Request) {
-//	var toService RequestGeoSearch
-//	err := json.NewDecoder(r.Body).Decode(&toService)
-//	if err != nil {
-//		controller.responder.ErrorBadRequest(w, fmt.Errorf("Invalid json"))
-//	}
-//	ctx := context.Background()
-//	req := &pb.AddressRequest{Query: toService.Query}
-//	resp, err := controller.rpc.GetAddress(ctx, req)
-//	if err != nil {
-//		controller.responder.ErrorInternal(w, fmt.Errorf("Internal error"))
-//	}
-//	geoResp := &GeoResponse{Addresses: []Geo{{Result: resp.GetResult(), GeoLat: resp.GetLat(), GeoLon: resp.GetLon()}}}
-//	json, err := json.Marshal(geoResp)
-//	controller.responder.OutputJSON(w, string(json))
-//
-//}
-//func (controller *Search) GetGeo(w http.ResponseWriter, r *http.Request) {
-//	var toGeo RequestGeoGeo
-//	err := json.NewDecoder(r.Body).Decode(&toGeo)
-//	if err != nil {
-//		controller.responder.ErrorBadRequest(w, fmt.Errorf("Invalid json"))
-//	}
-//	ctx := context.Background()
-//	req := &pb.GeoRequest{Lat: toGeo.Lat, Lon: toGeo.Lng}
-//	resp, err := controller.rpc.GetGeo(ctx, req)
-//	if err != nil {
-//		controller.responder.ErrorInternal(w, fmt.Errorf("Internal error"))
-//	}
-//	geoResp := &GeoResponse{Addresses: []Geo{{Result: resp.GetResult(), GeoLat: resp.GetLat(), GeoLon: resp.GetLon()}}}
-//	json, err := json.Marshal(geoResp)
-//	controller.responder.OutputJSON(w, string(json))
-//
-//}
+func (controller *Search) GetSearch(w http.ResponseWriter, r *http.Request) {
+	var toService RequestGeoSearch
+	err := json.NewDecoder(r.Body).Decode(&toService)
+	if err != nil {
+		controller.responder.ErrorBadRequest(w, fmt.Errorf("Invalid json"))
+		return
+	}
+	ctx := context.Background()
+	req := &pbs.AddressRequest{Query: toService.Query}
+	resp, err := controller.rpc.GetAddress(ctx, req)
+	if err != nil {
+		log.Println(err)
+		controller.responder.ErrorInternal(w, fmt.Errorf("Internal error"))
+		return
+	}
+	geoResp := &GeoResponse{Addresses: []Geo{{Result: resp.GetResult(), GeoLat: resp.GetLat(), GeoLon: resp.GetLon()}}}
+	json, err := json.Marshal(geoResp)
+	controller.responder.OutputJSON(w, string(json))
+
+}
+func (controller *Search) GetGeo(w http.ResponseWriter, r *http.Request) {
+	var toGeo RequestGeoGeo
+	err := json.NewDecoder(r.Body).Decode(&toGeo)
+	if err != nil {
+		controller.responder.ErrorBadRequest(w, fmt.Errorf("Invalid json"))
+		return
+	}
+	ctx := context.Background()
+	req := &pbs.GeoRequest{Lat: toGeo.Lat, Lon: toGeo.Lng}
+	resp, err := controller.rpc.GetGeo(ctx, req)
+	if err != nil {
+		log.Println(err)
+		controller.responder.ErrorInternal(w, fmt.Errorf("Internal error"))
+		return
+	}
+	geoResp := &GeoResponse{Addresses: []Geo{{Result: resp.GetResult(), GeoLat: resp.GetLat(), GeoLon: resp.GetLon()}}}
+	json, err := json.Marshal(geoResp)
+	controller.responder.OutputJSON(w, string(json))
+
+}
 
 // ///////////////////////////////////////////////////////SWAGGER ENDPOINT HANDLERS//////////////////////////////////////////////////////////////////////////////
 // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

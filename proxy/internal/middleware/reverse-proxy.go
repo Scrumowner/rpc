@@ -36,7 +36,7 @@ func (rp *ReverseProxy) ReverseProxy(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
-		if strings.HasPrefix(r.URL.Path, "/user") || strings.HasPrefix(r.URL.Path, "api/address") || strings.HasPrefix(r.URL.Path, "/swagger") {
+		if strings.HasPrefix(r.URL.Path, "/user") || strings.HasPrefix(r.URL.Path, "/api") || strings.HasPrefix(r.URL.Path, "/swagger") {
 			token := r.Header.Get("Authorization")
 			isAllow := rp.controller.AuthController.Verif(token)
 			if !isAllow {

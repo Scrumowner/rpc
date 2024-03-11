@@ -15,7 +15,6 @@ type ServConfig struct {
 }
 
 type HugoAddr struct {
-	Host string
 	Port string
 }
 type GeoAddr struct {
@@ -41,7 +40,6 @@ func (c *Config) Load() {
 		Port:   os.Getenv("PORXY_PORT"),
 	}
 	c.HugoAddr = &HugoAddr{
-		Host: os.Getenv("HUGO_HOST"),
 		Port: os.Getenv("HUGO_PORT"),
 	}
 	c.GeoAddr = &GeoAddr{

@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"log"
 	"rpc/service/models"
 )
 
@@ -24,11 +25,13 @@ func (r *SearchStorage) SearchAddress(ctx context.Context, query string) (models
 	res := models.SearchIntoDb{}
 	rows, err := r.db.Queryx("SELECT * FROM address WHERE query=$1 ", query)
 	if err != nil {
+		log.Println(err)
 		return models.Geo{}, err
 	}
 	for rows.Next() {
 		err := rows.StructScan(&res)
 		if err != nil {
+			log.Println(err)
 			continue
 		}
 		break
@@ -43,6 +46,7 @@ func (r *SearchStorage) SearchAddress(ctx context.Context, query string) (models
 func (r *SearchStorage) SaveAddress(ctx context.Context, query string, address models.Geo) error {
 	_, err := r.db.Exec("INSERT INTO address (query,result,lat,lon) VALUES ($1,$2,$3,$4)", query, address.Result, address.GeoLat, address.GeoLon)
 	if err != nil {
+		log.Println(err)
 		return err
 	}
 	return nil
@@ -50,13 +54,15 @@ func (r *SearchStorage) SaveAddress(ctx context.Context, query string, address m
 
 func (r *SearchStorage) SearchGeoCode(ctx context.Context, request models.GeocodeRequest) (models.Geo, error) {
 	res := models.GeoIntoDb{}
-	rows, err := r.db.Queryx("SELECT * FROM geo WHERE (lat=$1, lng=$2)", request.Lat, request.Lng)
+	rows, err := r.db.Queryx("SELECT * FROM geo WHERE lat=$1 AND lng=$2;", request.Lat, request.Lng)
 	if err != nil {
+		log.Println(err)
 		return models.Geo{}, err
 	}
 	for rows.Next() {
 		err := rows.StructScan(&res)
 		if err != nil {
+			log.Println(err)
 			continue
 		}
 		break
@@ -72,6 +78,7 @@ func (r *SearchStorage) SearchGeoCode(ctx context.Context, request models.Geocod
 func (r *SearchStorage) SaveGeoCode(ctx context.Context, request models.GeocodeRequest, response models.Geo) error {
 	_, err := r.db.Exec("INSERT INTO geo (lat,lng,result,r_lat,r_lon) VALUES ($1,$2,$3,$4,$5)", request.Lat, request.Lng, response.Result, response.GeoLat, response.GeoLon)
 	if err != nil {
+		log.Println(err)
 		return err
 	}
 	return nil

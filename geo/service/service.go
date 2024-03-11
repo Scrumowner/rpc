@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/jmoiron/sqlx"
 	"github.com/redis/go-redis/v9"
+	"log"
 	"net/http"
 	"rpc/service/config"
 	"rpc/service/models"
@@ -44,6 +45,7 @@ func (geo *GeoService) GetSearch(r models.SearchRequest) (string, error) {
 	}}})
 	if err != nil {
 		return "", err
+		log.Println(err)
 	}
 	geo.storageProxy.SaveSearchAddress(context.Background(), r.Query, models.Geo{
 		Result: resp.Addresses[0].Result,
@@ -66,6 +68,7 @@ func (geo *GeoService) GetGeoCode(r models.GeocodeRequest) (string, error) {
 		GeoLat: respFromProvider.Addresses[0].GeoLat,
 		GeoLon: respFromProvider.Addresses[0].GeoLon}}})
 	if err != nil {
+		log.Println(err)
 		return "", err
 	}
 	geo.storageProxy.SaveGeoCode(context.Background(), r, models.Geo{
