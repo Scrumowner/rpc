@@ -49,17 +49,3 @@ func RateWorker(us chan string, res chan bool) {
 
 	}
 }
-
-//
-//	for i := 0; i <= 1; i++ {
-//		for j := 0; j <= 50; j++ {
-//			if i == 0 {
-//				userChan <- userID1
-//				fmt.Println(<-resolveChan)
-//			} else if i == 1 {
-//				userChan <- userID
-//				fmt.Println(<-resolveChan)
-//			}
-//		}
-//
-// }

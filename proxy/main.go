@@ -7,8 +7,10 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"github.com/streadway/amqp"
 	"os"
 	"os/signal"
+	"proxy/internal/infra/ratelimit"
 	"proxy/internal/router"
 
 	"go.uber.org/zap"
@@ -58,15 +60,15 @@ func main() {
 	defer authConn.Close()
 	defer userConn.Close()
 
-	//amqpConnect, err := amqp.Dial("amqp://guest:guest@rabbitmq:5672/")
-	//if err != nil {
-	//	log.Fatal("Can't connect to amqp ")
-	//}
-	//usersRequsts := make(chan string)
-	//isAllow := make(chan bool)
-	//go ratelimit.RateWorker(usersRequsts, isAllow)
+	amqpConnect, err := amqp.Dial("amqp://guest:guest@rabbitmq:5672/")
+	if err != nil {
+		log.Fatal("Can't connect to amqp ")
+	}
+	usersRequsts := make(chan string)
+	isAllow := make(chan bool)
+	go ratelimit.RateWorker(usersRequsts, isAllow)
 	controller := controllers.NewControllers(sugar, userConn, authConn, geoConn)
-	rp := internalMiddleware.NewReverseProxy(controller, fmt.Sprintf("http://hugo"), fmt.Sprintf(":%s", conn.HugoAddr.Port))
+	rp := internalMiddleware.NewReverseProxy(controller, fmt.Sprintf("http://hugo"), fmt.Sprintf(":%s", conn.HugoAddr.Port), usersRequsts, isAllow, amqpConnect)
 	r.Use(rp.ReverseProxy)
 
 	ro := router.NewRouter(r, controller)

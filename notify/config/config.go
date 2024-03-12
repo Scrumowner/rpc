@@ -8,6 +8,8 @@ type NotifyConfig struct {
 	*SmtpConfig
 	*RabbitConfig
 	*KafkaConfig
+	Secret     string
+	BrokerType string
 }
 type SmtpConfig struct {
 	SmtpHost string
@@ -34,7 +36,8 @@ func NewNotifyConfig() *NotifyConfig {
 func (c *NotifyConfig) Load() {
 	c.Domain = os.Getenv("NOTIFY_DOMAIN")
 	c.Port = os.Getenv("NOTIFY_PORT")
-	if "rabbitmq" == os.Getenv("MESSAGE_BROKER") {
+	c.BrokerType = os.Getenv("MESSAGE_BROKER")
+	if "rabbitmq" == c.BrokerType {
 		c.RabbitConfig = &RabbitConfig{
 			User:     os.Getenv("RABBIT_USER"),
 			Password: os.Getenv("RABBIT_PASSWORD"),
@@ -53,5 +56,6 @@ func (c *NotifyConfig) Load() {
 		From:     os.Getenv("EMAIL_FROM"),
 		Password: os.Getenv("EMAIL_PASSWORD"),
 	}
+	c.Secret = os.Getenv("AUTH_SECRET")
 
 }

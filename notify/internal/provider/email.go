@@ -11,7 +11,7 @@ const (
 	textPlain = "text/plain"
 	textHtml  = "text/html"
 
-	TextPlain = iota + 1
+	TextPlain = iota
 	TextHtml
 )
 
