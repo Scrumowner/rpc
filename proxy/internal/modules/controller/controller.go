@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"proxy/internal/infra/responder"
+	"proxy/internal/modules/service"
 	pba "proxy/proto/auth"
 	pbs "proxy/proto/geo"
 	pbu "proxy/proto/user"
@@ -239,27 +240,26 @@ func (controller *Search) GetGeo(w http.ResponseWriter, r *http.Request) {
 // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//	func NewSwaggerer(logger *zap.SugaredLogger, client http.Client, responder responder.Responder) *Swagger {
-//		return &Swagger{
-//			responder:      responder,
-//			logger:         logger,
-//			swaggerservice: service.NewSwaggerService(),
-//		}
-//	}
-//
+func NewSwaggerer(logger *zap.SugaredLogger, responder responder.Responder) *Swagger {
+	return &Swagger{
+		responder:      responder,
+		logger:         logger,
+		swaggerservice: service.NewSwaggerService(),
+	}
+}
 
-//	type Swagger struct {
-//		responder      responder.Responder
-//		swaggerservice service.SwaggerServiceer
-//		logger         *zap.SugaredLogger
-//	}
+type Swagger struct {
+	responder      responder.Responder
+	swaggerservice service.SwaggerServiceer
+	logger         *zap.SugaredLogger
+}
 
-//func (controller *Swagger) GetSwaggerHtml(w http.ResponseWriter, r *http.Request) {
-//	html := controller.swaggerservice.GetSwaggerHtml()
-//	controller.responder.OutputHtml(w, html)
-//}
-//func (controller *Swagger) GetSwaggerJson(w http.ResponseWriter, r *http.Request) {
-//	json := controller.swaggerservice.GetSwaggerJson()
-//	controller.responder.OutputJSON(w, json)
-//
-//}
+func (controller *Swagger) GetSwaggerHtml(w http.ResponseWriter, r *http.Request) {
+	html := controller.swaggerservice.GetSwaggerHtml()
+	controller.responder.OutputHtml(w, html)
+}
+func (controller *Swagger) GetSwaggerJson(w http.ResponseWriter, r *http.Request) {
+	json := controller.swaggerservice.GetSwaggerJson()
+	controller.responder.OutputJSON(w, json)
+
+}

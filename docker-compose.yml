@@ -30,12 +30,12 @@ services:
       networks:
         - mylocal
 
-  rabit:
-    image: rabbitmq:3-managment-alpine
+  rabbitmq:
+    image: rabbitmq:management
     container_name: rabbitmq
     ports:
-      - 5672:5672
-      - 15672:15672
+      - ${RABBIT_PORT}:${RABBIT_PORT}
+      - ${RABBIT_MANAGMENT_PORT}:${RABBIT_MANAGMENT_PORT}
     restart: on-failure
     volumes:
       - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/

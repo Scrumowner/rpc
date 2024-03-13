@@ -34,7 +34,7 @@ import (
 //
 //go:generate swagger generate spec -o ./swagger.json --scan-models
 
-// swagger:route POST /api/address/search apiRequestSearch
+// swagger:route POST /api/address/search Search
 // Search by address
 // responses:
 //
@@ -59,7 +59,7 @@ type apiResponseSearch struct {
 	Body controller.GeoResponse
 }
 
-// swagger:route POST /api/address/geocode apiGeocodeRequest
+// swagger:route POST /api/address/geocode Geocode
 // Search by geocode
 // responses:
 //
@@ -84,7 +84,7 @@ type apiGeocodeResponse struct {
 	Body controller.GeoResponse
 }
 
-// swagger:route POST /auth/register apiRegisterRequest
+// swagger:route POST /auth/register Register
 // Register
 // responses:
 //
@@ -95,11 +95,6 @@ type apiRegisterRequest struct {
 	// in:body
 	// required: true
 	Body controller.RequestAuth
-
-	// in: header
-	// name: Authorization
-	// description: Bearer token for authentication
-	Token string `json:"Authorization"`
 }
 
 // swagger:response apiRegisterResponse
@@ -111,7 +106,7 @@ type apiRegisterResponse struct {
 	}
 }
 
-// swagger:route POST /auth/login apiLoginRequest
+// swagger:route POST /auth/login Login
 // Login
 // responses:
 //
@@ -133,13 +128,13 @@ type apiLoginResponse struct {
 	}
 }
 
+// swagger:route POST /user/profile Profile
 // Profile
 // responses:
 //
 // 200 : apiProfileResponse
 //
-//swagger:route POST /user/profile apiProfileRequest
-//swagger:parameters apiProfileRequest
+// swagger:parameters apiProfileRequest
 type apiProfileRequest struct {
 	//in:body
 	//required: true
@@ -150,36 +145,30 @@ type apiProfileRequest struct {
 	Token string `json:"Authorization"`
 }
 
-//swagger:response apiProfileResponse
+// swagger:response apiProfileResponse
 type apiProfileResponse struct {
 	//in:body
 	//required:true
 	Body controller.ProfileResponse
 }
 
+// swagger:route POST /user/list List
 // List
 // responses:
 //
 // 200 : apiListResponse
 //
-//swagger:route POST /user/list apiListRequest
-//swagger:parameters apiListRequest
+// swagger:parameters apiListRequest
 type apiListRequest struct {
-}
-
-//swagger:response apiListResponse
-type apiListResponse struct {
-	//in:body
-	//required:true
-	Body controller.ListUser
 	// in: header
 	// name: Authorization
 	// description: Bearer token for authentication
 	Token string `json:"Authorization"`
 }
 
-// swagger:securityDefinitions
-//   Bearer:
-//     type: apiKey
-//     name: Authorization
-//     in: header
+// swagger:response apiListResponse
+type apiListResponse struct {
+	//in:body
+	//required:true
+	Body controller.ListUser
+}

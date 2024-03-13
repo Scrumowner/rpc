@@ -45,35 +45,11 @@ var SwagJson = `
 {
   "swagger": "2.0",
   "info": {},
-  "securityDefinitions": {
-    "Bearer": {
-      "type": "apiKey",
-      "name": "Authorization",
-      "in": "header",
-      "description": "Bearer token for authentication"
-    }
-  },
   "paths": {
     "/api/address/geocode": {
       "post": {
         "description": "Search by geocode",
-        "operationId": "apiGeocodeRequest",
-        "parameters": [
-          {
-            "name": "Body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/GeocodeRequest"
-            }
-          },
-          {
-            "type": "string",
-            "x-go-name": "Token",
-            "name": "Authorization",
-            "in": "header"
-          }
-        ],
+        "operationId": "Geocode",
         "responses": {
           "200": {
             "$ref": "#/responses/apiGeocodeResponse"
@@ -84,23 +60,7 @@ var SwagJson = `
     "/api/address/search": {
       "post": {
         "description": "Search by address",
-        "operationId": "apiRequestSearch",
-        "parameters": [
-          {
-            "name": "Body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/SearchRequest"
-            }
-          },
-          {
-            "type": "string",
-            "x-go-name": "Token",
-            "name": "Authorization",
-            "in": "header"
-          }
-        ],
+        "operationId": "Search",
         "responses": {
           "200": {
             "$ref": "#/responses/apiResponseSearch"
@@ -108,20 +68,10 @@ var SwagJson = `
         }
       }
     },
-    "/api/login": {
+    "/auth/login": {
       "post": {
         "description": "Login",
-        "operationId": "apiLoginRequest",
-        "parameters": [
-          {
-            "name": "Body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/User"
-            }
-          }
-        ],
+        "operationId": "Login",
         "responses": {
           "200": {
             "$ref": "#/responses/apiLoginResponse"
@@ -129,50 +79,42 @@ var SwagJson = `
         }
       }
     },
-    "/api/register": {
+    "/auth/register": {
       "post": {
         "description": "Register",
-        "operationId": "apiRegisterRequest",
-        "parameters": [
-          {
-            "name": "Body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/User"
-            }
-          },
-          {
-            "type": "string",
-            "x-go-name": "Token",
-            "name": "Authorization",
-            "in": "header"
-          }
-        ],
+        "operationId": "Register",
         "responses": {
           "200": {
             "$ref": "#/responses/apiRegisterResponse"
           }
         }
       }
+    },
+    "/user/list": {
+      "post": {
+        "description": "List",
+        "operationId": "List",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/apiListResponse"
+          }
+        }
+      }
+    },
+    "/user/profile": {
+      "post": {
+        "description": "Profile",
+        "operationId": "Profile",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/apiProfileResponse"
+          }
+        }
+      }
     }
   },
   "definitions": {
-    "GeocodeRequest": {
-      "type": "object",
-      "properties": {
-        "lat": {
-          "type": "string",
-          "x-go-name": "Lat"
-        },
-        "lng": {
-          "type": "string",
-          "x-go-name": "Lng"
-        }
-      },
-      "x-go-package": "hugoproxy-main/middleware/handler"
-    },
-    "ReworkedSearch": {
+    "Geo": {
       "type": "object",
       "properties": {
         "lat": {
@@ -188,22 +130,102 @@ var SwagJson = `
           "x-go-name": "Result"
         }
       },
-      "x-go-package": "hugoproxy-main/middleware/handler"
+      "x-go-package": "proxy/internal/modules/controller"
     },
-    "ReworkedSearchResponse": {
+    "GeoResponse": {
       "type": "object",
       "properties": {
         "addresses": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/ReworkedSearch"
+            "$ref": "#/definitions/Geo"
           },
           "x-go-name": "Addresses"
         }
       },
-      "x-go-package": "hugoproxy-main/middleware/handler"
+      "x-go-package": "proxy/internal/modules/controller"
     },
-    "SearchRequest": {
+    "ListUser": {
+      "type": "object",
+      "properties": {
+        "users": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/UserFromRpc"
+          },
+          "x-go-name": "Users"
+        }
+      },
+      "x-go-package": "proxy/internal/modules/controller"
+    },
+    "ProfileRequest": {
+      "description": "User endponit types",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "x-go-name": "Email"
+        },
+        "phone": {
+          "type": "string",
+          "x-go-name": "Phone"
+        }
+      },
+      "x-go-package": "proxy/internal/modules/controller"
+    },
+    "ProfileResponse": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "x-go-name": "Email"
+        },
+        "password": {
+          "type": "string",
+          "x-go-name": "Password"
+        },
+        "phone": {
+          "type": "string",
+          "x-go-name": "Phone"
+        }
+      },
+      "x-go-package": "proxy/internal/modules/controller"
+    },
+    "RequestAuth": {
+      "description": "Auth register and login type",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "x-go-name": "Email"
+        },
+        "password": {
+          "type": "string",
+          "x-go-name": "Password"
+        },
+        "phone": {
+          "type": "string",
+          "x-go-name": "Phone"
+        }
+      },
+      "x-go-package": "proxy/internal/modules/controller"
+    },
+    "RequestGeoGeo": {
+      "type": "object",
+      "properties": {
+        "lat": {
+          "type": "string",
+          "x-go-name": "Lat"
+        },
+        "lng": {
+          "type": "string",
+          "x-go-name": "Lng"
+        }
+      },
+      "x-go-package": "proxy/internal/modules/controller"
+    },
+    "RequestGeoSearch": {
+      "description": "Geo search and geocode type",
       "type": "object",
       "properties": {
         "query": {
@@ -211,27 +233,36 @@ var SwagJson = `
           "x-go-name": "Query"
         }
       },
-      "x-go-package": "hugoproxy-main/middleware/handler"
+      "x-go-package": "proxy/internal/modules/controller"
     },
-    "User": {
+    "UserFromRpc": {
       "type": "object",
       "properties": {
+        "email": {
+          "type": "string",
+          "x-go-name": "Email"
+        },
         "password": {
           "type": "string",
           "x-go-name": "Password"
         },
-        "username": {
+        "phone": {
           "type": "string",
-          "x-go-name": "Username"
+          "x-go-name": "Phone"
         }
       },
-      "x-go-package": "hugoproxy-main/middleware/handler"
+      "x-go-package": "proxy/internal/modules/controller"
     }
   },
   "responses": {
     "apiGeocodeResponse": {
       "schema": {
-        "$ref": "#/definitions/ReworkedSearchResponse"
+        "$ref": "#/definitions/GeoResponse"
+      }
+    },
+    "apiListResponse": {
+      "schema": {
+        "$ref": "#/definitions/ListUser"
       }
     },
     "apiLoginResponse": {
@@ -243,6 +274,11 @@ var SwagJson = `
             "x-go-name": "Token"
           }
         }
+      }
+    },
+    "apiProfileResponse": {
+      "schema": {
+        "$ref": "#/definitions/ProfileResponse"
       }
     },
     "apiRegisterResponse": {
@@ -258,7 +294,7 @@ var SwagJson = `
     },
     "apiResponseSearch": {
       "schema": {
-        "$ref": "#/definitions/ReworkedSearch"
+        "$ref": "#/definitions/GeoResponse"
       }
     }
   }
