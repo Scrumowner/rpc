@@ -21,9 +21,9 @@ func NewRouter(r *chi.Mux, c *controllers.Controllers) *chi.Mux {
 		r.Post("/geocode", c.SearchController.GetGeo)
 	})
 
-	//r.Route("/swagger", func(r chi.Router) {
-	//	r.Get("/index", controller.SwagController.GetSwaggerHtml)
-	//	r.Get("/swagger", controller.SwagController.GetSwaggerJson)
-	//})
+	r.Route("/swagger", func(r chi.Router) {
+		r.Get("/index", c.SwagController.GetSwaggerHtml)
+		r.Get("/swagger", c.SwagController.GetSwaggerJson)
+	})
 	return r
 }

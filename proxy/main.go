@@ -98,31 +98,3 @@ func main() {
 	}
 
 }
-
-//func fullGoroutineStackDump(w http.ResponseWriter, r *http.Request) {
-//	// Получаем полный стек горутин
-//	buf := make([]byte, 1<<20)
-//	stackLen := runtime.Stack(buf, true)
-//
-//	// Отправляем содержимое стека в ответ на запрос
-//	w.Header().Set("Content-Type", "text/plain")
-//	w.WriteHeader(http.StatusOK)
-//	w.Write(buf[:stackLen])
-//}
-
-//r.Route("/mycustompath", func(r chi.Router) {
-//	//r.Use(jwtauth.Verifier(migrator.TokenAuth))
-//	//r.Use(jwtauth.Authenticator(migrator.TokenAuth))
-//	//r.Use(internalMiddleware.TokenAuthMiddleware)
-//	r.Get("/pprof/profile", pprof.Profile)
-//	r.Get("/pprof/trace", pprof.Trace)
-//	r.Get("/pprof/", pprof.Index)
-//	r.Get("/pprof/allocs", pprof.Handler("allocs").ServeHTTP)
-//	r.Get("/pprof/block", pprof.Handler("block").ServeHTTP)
-//	r.Get("/pprof/cmdline", pprof.Cmdline)
-//	r.Get("/pprof/goroutine", pprof.Handler("goroutine").ServeHTTP)
-//	r.Get("/pprof/heap", pprof.Handler("heap").ServeHTTP)
-//	r.Get("/pprof/mutex", pprof.Handler("mutex").ServeHTTP)
-//	r.Get("/pprof/threadcreate", pprof.Handler("threadcreate").ServeHTTP)
-//	r.Get("/debug/pprof/goroutine", fullGoroutineStackDump)
-//})
